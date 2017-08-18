@@ -4082,6 +4082,27 @@ bool SystemTools::ComparePath(const std::string& c1, const std::string& c2)
 }
 
 //----------------------------------------------------------------------------
+void SystemTools::Unique(std::vector<std::string>& lines)
+{
+    std::set<std::string> seen;
+    std::vector<std::string>::iterator itr = lines.begin();
+    while (itr != lines.end())
+    {
+      if (!seen.insert((*itr)).second)
+      {
+        // If the item has been seen before, remove it and move itr to the new
+        // location of the next item
+        itr = lines.erase(itr);
+      }
+      else
+      {
+        // otherwise go to the next item
+        itr++;
+      }
+    }
+}
+
+//----------------------------------------------------------------------------
 bool SystemTools::Split(const std::string& str, std::vector<std::string>& lines, char separator)
 {
   std::string data(str);

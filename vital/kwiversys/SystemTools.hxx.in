@@ -228,6 +228,11 @@ public:
   static bool Split(const std::string& s, std::vector<std::string>& l, char separator);
 
   /**
+   * Removes duplicate strings in a vector while preserving original order
+   */
+  static void Unique(std::vector<std::string>& l);
+
+  /**
    * Return string with space added between capitalized words
    * (i.e. EatMyShorts becomes Eat My Shorts )
    * (note that IEatShorts becomes IEat Shorts)

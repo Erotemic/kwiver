@@ -37,8 +37,11 @@ Base class for all VITAL Python interface classes
 import abc
 import ctypes
 import logging
+import six
 
 from vital.util.find_vital_library import find_vital_library
+
+VITAL_LIB = find_vital_library()
 
 
 class VitalClassMeta (abc.ABCMeta):
@@ -62,6 +65,7 @@ class VitalClassMeta (abc.ABCMeta):
         return super(VitalClassMeta, cls).__new__(cls, name, bases, attrs)
 
 
+@six.add_metaclass(VitalClassMeta)
 class VitalObject (object):
     """
     Basic VITAL python interface class.
@@ -78,9 +82,9 @@ class VitalObject (object):
           instance. Value undefined defined on the class level.
 
     """
-    __metaclass__ = VitalClassMeta
+    # __metaclass__ = VitalClassMeta
 
-    VITAL_LIB = find_vital_library()
+    VITAL_LIB = VITAL_LIB
 
     # C API opaque structure + pointer
     C_TYPE = None
@@ -138,6 +142,40 @@ class VitalObject (object):
             if exception_map:
                 eh.set_exception_map(exception_map)
             return f(*(list(args) + [eh]))
+
+    @classmethod
+    def cast(cls, data):
+        """
+        Attempt to cast arbitrary data to this VitalObject type.
+
+        This ensures that the result is always either proper VitalObject
+        suitable for communicating with the kwiver C-API or None.  If the data
+        cannot be cast to this type then a TypeError is raised.
+
+        It is up to the child class to override this method with a definition
+        to allow for python "duck-typing". By default this just checks
+        that data is an instance of this class.
+
+        A class that should overwrite this method by first checking types and
+        casting if possible and always calling. The final line should always be
+        a super call to this function.
+        """
+        if data is None:
+            return data
+        if not isinstance(data, cls):
+            raise TypeError('Cannot cast {} to {}'.format(type(data), cls))
+        return data
+
+    @classmethod
+    def from_cptr(cls, from_cptr):
+        """
+        :param from_cptr: Existing C opaque instance pointer to use, preventing
+            new instance construction. This should of course be a valid pointer
+            to an instance. Only a new instance pointer or a new shared pointer
+            reference should be passed here, otherwise memory issue will ensue.
+            Thus this should only be used if you know what you're doing.
+        """
+        return cls(from_cptr=from_cptr)
 
     def __init__(self, from_cptr=None, *args, **kwds):
         """
@@ -269,12 +307,12 @@ class OpaqueTypeCache (object):
     def get_types(self, k):
         """
         Return or generate opaque type and pointer based on shape spec.
-        
+
         :param k: Descriptive identifier.
         :type k: str
-        
-        :return: The first element is a subclass of ctypes.Structure with 
-            __name__ populated with self._prefix and k. The second element is 
+
+        :return: The first element is a subclass of ctypes.Structure with
+            __name__ populated with self._prefix and k. The second element is
             a ctypes pointer to the first element.
         :rtype: (_ctypes.PyCStructType, ctypes pointer type)
         """
@@ -289,10 +327,10 @@ class OpaqueTypeCache (object):
 
     def new_type_getter(self):
         """
-        Returns a new simple object with a __getitem__ hook that accepts a 
-        string representing a particular C opaque type and returns the 
+        Returns a new simple object with a __getitem__ hook that accepts a
+        string representing a particular C opaque type and returns the
         appropriate subclass of ctypes.Structure.
-        
+
         :return: c type manager.
         :rtype: instance of c_type_manager.
         """
@@ -311,10 +349,10 @@ class OpaqueTypeCache (object):
 
     def new_ptr_getter(self):
         """
-        Returns a new simple object with a __getitem__ hook that accepts a 
-        string representing a particular C opaque type and returns a ctypes 
+        Returns a new simple object with a __getitem__ hook that accepts a
+        string representing a particular C opaque type and returns a ctypes
         pointer type for the appropriate subclass of ctypes.Structure.
-        
+
         :return: c type manager.
         :rtype: instance of c_type_ptr_manager.
         """

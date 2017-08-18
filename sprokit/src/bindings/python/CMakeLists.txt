@@ -1,6 +1,7 @@
-#
-#
-#
+# CMakeLists for the sprokit python package.
+# pure python files are configured and copied to the build directory where they
+# will have access to compiled shared C++ libraries with python bindings (currently via boost-python, but maybe pybind11 soon?)
+
 
 project(sprokit_python)
 
@@ -22,6 +23,8 @@ find_package(Boost ${sprokit_boost_version} REQUIRED
 find_package(PythonLibs ${PYTHON_VERSION} REQUIRED)
 include_directories(SYSTEM ${PYTHON_INCLUDE_DIR})
 
+
+# macro defined in kwiver/sprokit/conf
 sprokit_use_python_fixes()
 
 ###
@@ -68,7 +71,11 @@ set(copyright_header
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
 )
 
+# The following subdirectories defined submodules of the sprokit python package
+
+# This sprokit subdirectory defines the pipeline and pipeline_util python modules
 add_subdirectory(sprokit)
+# The rest of the subdirectores are their own python modules
 add_subdirectory(modules)
 add_subdirectory(processes)
 add_subdirectory(schedulers)

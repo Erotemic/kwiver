@@ -186,6 +186,8 @@ add_path_from_environment( std::string env_var)
 
     // Split supplied path into separate items using PATH_SEPARATOR_CHAR as delimiter
     ST::Split( extra_module_dirs, m_priv->m_search_paths, PATH_SEPARATOR_CHAR );
+    // remove any duplicate search paths
+    ST::Unique(m_priv->m_search_paths);
   }
   else
   {

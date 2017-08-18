@@ -45,7 +45,7 @@ extern "C"
 
 #include <stddef.h>
 
-/// VITAL Image opaque structure
+/// VITAL detected_object_type opaque structure
 typedef struct vital_detected_object_type_s vital_detected_object_type_t;
 
 
@@ -83,8 +83,14 @@ VITAL_C_EXPORT
 char** vital_detected_object_type_class_names( vital_detected_object_type_t* obj, double thresh );
 
 VITAL_C_EXPORT
-char** vital_detected_object_type_all_class_names(vital_detected_object_type_t* obj);
+char** vital_detected_object_type_all_class_names();
+    //vital_detected_object_type_t* obj);
 
+VITAL_C_EXPORT
+size_t vital_detected_object_type_size(vital_detected_object_type_t* obj);
+
+VITAL_C_EXPORT
+size_t vital_detected_object_type_all_class_size();
 
 #ifdef __cplusplus
 }

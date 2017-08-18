@@ -39,21 +39,22 @@ from vital.types import DetectedObject
 from vital.util import free_void_ptr
 from vital.util import VitalObject
 from vital.util import VitalErrorHandle
+from vital.types.mixins import NiceRepr
 
 
-class DetectedObjectSet (VitalObject):
+class DetectedObjectSet (VitalObject, NiceRepr):
     """
     vital::detected_object_set interface class
     """
 
-    def __init__(self, dobjs = None, count = None, from_cptr = None):
+    def __init__(self, dobjs=None, count=None, from_cptr=None):
         """
         Create a simple detected object type
 
          """
         super(DetectedObjectSet, self).__init__(from_cptr, dobjs, count)
 
-    def _new(self, dobjs = None, count = None):
+    def _new(self, dobjs=None, count=None):
         if dobjs is None or count is None:
             dos_new = self.VITAL_LIB.vital_detected_object_set_new
             dos_new.argtypes = []
@@ -82,10 +83,33 @@ class DetectedObjectSet (VitalObject):
         dos_size.restype = ctypes.c_size_t
         return dos_size(self)
 
-    def select(self, one = 0.0, two = None):
+    def select(self, one=0.0, two=None):
+        """
+        Selects detections based on either bounding box or class thresholds
+
+        Docs from CXX:
+
+        Select detections based on confidence value.
+
+        This method returns a vector of detections ordered by confidence
+        value, high to low. If the optional threshold is specified, then
+        all detections from the set that are less than the threshold are
+        not in the selected set. Note that the selected set may be empty.
+
+        The returned vector refers to the actual detections in the set,
+        so if you make changes to the selected set, you are also changing
+        the object in the set. If you want a clean set of detections,
+        call clone() first.
+
+        @param threshold Select all detections with confidence not less
+        than this value. If this parameter is omitted,
+        then all detections are selected.
+
+        @return List of detections.
+        """
 
         c_output = ctypes.POINTER(DetectedObject.c_ptr_type())()
-        length = ctypes.c_size_t() 
+        length = ctypes.c_size_t()
 
         if two is None:
             dos_st = self.VITAL_LIB.vital_detected_object_set_select_threshold
@@ -107,3 +131,5 @@ class DetectedObjectSet (VitalObject):
         free_void_ptr( c_output )
         return output
 
+    def __nice__(self):
+        return str(self.size())

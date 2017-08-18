@@ -194,6 +194,10 @@ BOOST_PYTHON_MODULE(process_factory)
   def("types", &process_names
       , "Returns list of process names" );
 
+  //auto logger = kwiver::vital::get_logger("sprokit.python.process_factory");
+  auto logger = kwiver::vital::get_logger("sprokit.process_factory");
+  LOG_INFO(logger, "DEFINING PYTHON TYPES");
+
   //+ convert this to process_factory
   class_<sprokit::process_factory, sprokit::process_factory, boost::noncopyable>("ProcessFactory"
     , "A registry of all known process types."
@@ -225,6 +229,12 @@ register_process( sprokit::process::type_t const&        type,
                   object                                 obj )
 {
   sprokit::python::python_gil const gil;
+
+  //auto logger = kwiver::vital::get_logger("sprokit.python.process_factory");
+  auto logger = kwiver::vital::get_logger("sprokit.process_factory");
+  LOG_INFO(logger, "Registering process");
+  LOG_INFO(logger, " * type = " << type );
+  LOG_INFO(logger, " * desc = " << desc );
 
   (void)gil;
 

@@ -33,12 +33,17 @@ try:
     from . import loaders
 except:
     from straight.plugin import loaders
+import logging
+import os
+
+log = logging.getLogger(__name__)
+os.environ.get('KWIVER_DEFAULT_LOG_LEVEL', 'debug')
 
 
-def _log(msg):
-    import sys
-    sys.stderr.write("%s\n" % msg)
-    sys.stderr.flush()
+# def _log(msg):
+#     import sys
+#     sys.stderr.write("%s\n" % msg)
+#     sys.stderr.flush()
 
 
 def _load_python_module(mod):
@@ -49,8 +54,8 @@ def _load_python_module(mod):
             mod.__sprokit_register__()
 
     else:
-        print(('[WARN] Python module {} does not have '
-               '__sprokit_register__ method').format(mod))
+        log.warn(('[WARN] Python module {} does not have '
+                  '__sprokit_register__ method').format(mod))
 
 
 def load_python_modules():
@@ -82,11 +87,12 @@ def load_python_modules():
         all_modules += modules
 
     for module in all_modules:
-        print('[DEBUG] Loading python module: {}'.format(module))
+        log.debug('[DEBUG] Loading python module: {}'.format(module))
 
         try:
             _load_python_module(module)
-        except BaseException:
-            import sys
-            e = sys.exc_info()[1]
-            _log("Failed to load '%s': %s" % (module, str(e)))
+        except BaseException as e:
+            log.warn('Failed to load "{}": {}'.format(module, e))
+            # import sys
+            # e = sys.exc_info()[1]
+            # _log("Failed to load '%s': %s" % (module, str(e)))

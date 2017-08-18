@@ -36,21 +36,37 @@ Interface to VITAL bounding_box class.
 import ctypes
 
 from vital.util import VitalObject
-from vital.util import VitalErrorHandle
+from vital.util import VitalErrorHandle  # NOQA
+from vital.types.mixins import NiceRepr
 
 from vital.util import free_void_ptr
 
 
-class BoundingBox (VitalObject):
+class BoundingBox (VitalObject, NiceRepr):
     """
     vital::detected_object_ interface class
+
+    Example:
+        >>> from vital.types import BoundingBox
+        >>> self = BoundingBox(0, 1, 10, 12)
+        >>> c = self.center()
+        >>> assert c == (5, 6.5)
+        >>> wh = self.width(), self.height()
+        >>> assert wh == (10, 11)
     """
 
-    def __init__(self, one = None, two = None, three = None, four = None, from_cptr=None):
+    # --- C Bindings ---
+
+    def __init__(self, one=None, two=None, three=None, four=None, from_cptr=None):
         """
         Create a simple detected object type
 
-         """
+        SeeAlso:
+            # classmethods with documented constructors
+            BoundingBox.from_vectors
+            BoundingBox.from_point_width_height
+            BoundingBox.from_coords
+        """
         super(BoundingBox, self).__init__( from_cptr, one, two, three, four )
 
     def _new(self, one, two, three, four):
@@ -106,8 +122,18 @@ class BoundingBox (VitalObject):
 
     def center(self):
         """
-        returns two doubles
+        Returns:
+            tuple: center xy value
+
+        Example:
+            >>> from vital.types import BoundingBox
+            >>> self = BoundingBox.from_coords(0, 0, 10, 10)
+            >>> self.center()
+            (5.0, 5.0)
         """
+        # TODO: the ctypes function definition should not be specified on each
+        # call. This should be done once, either on module import or object
+        # definition (via metaclass)
         bb_center = self.VITAL_LIB.vital_bounding_box_center
         bb_center.argtypes = [self.C_TYPE_PTR]
         bb_center.restype = ctypes.POINTER(ctypes.c_double)
@@ -119,11 +145,19 @@ class BoundingBox (VitalObject):
 
     def upper_left(self):
         """
-        returns two doubles
+        Returns:
+            tuple: upper-left xy value
+
+        Example:
+            >>> from vital.types import BoundingBox
+            >>> self = BoundingBox.from_coords(0, 0, 10, 10)
+            >>> self.upper_left()
+            (0.0, 0.0)
         """
         bb_ul = self.VITAL_LIB.vital_bounding_box_upper_left
         bb_ul.argtypes = [self.C_TYPE_PTR]
         bb_ul.restype = ctypes.POINTER(ctypes.c_double)
+        output_pt = bb_ul(self)
         l_value = output_pt[0]
         r_value = output_pt[1]
         free_void_ptr( output_pt )
@@ -131,7 +165,14 @@ class BoundingBox (VitalObject):
 
     def lower_right(self):
         """
-        returns two doubles
+        Returns:
+            tuple: lower-right xy value
+
+        Example:
+            >>> from vital.types import BoundingBox
+            >>> self = BoundingBox.from_coords(0, 0, 10, 10)
+            >>> self.lower_right()
+            (10.0, 10.0)
         """
         bb_lr = self.VITAL_LIB.vital_bounding_box_lower_right
         bb_lr.argtypes = [self.C_TYPE_PTR]
@@ -179,7 +220,93 @@ class BoundingBox (VitalObject):
         return bb_height(self)
 
     def area(self):
+        """
+        Returns:
+            float: bounding-box area
+
+        Example:
+            >>> from vital.types import BoundingBox
+            >>> self = BoundingBox.from_coords(0, 0, 10, 10)
+            >>> self.area()
+            100.0
+        """
         bb_area = self.VITAL_LIB.vital_bounding_box_area
         bb_area.argtypes = [self.C_TYPE_PTR]
         bb_area.restype = ctypes.c_double
         return bb_area(self)
+
+    # --- Python convineince functions ---
+
+    @classmethod
+    def cast(cls, data):
+        if isinstance(data, (list, tuple)):
+            return cls(*data)
+        return super(BoundingBox, cls).cast(data)
+
+    def __nice__(self):
+        """
+        Example:
+            >>> from vital.types import BoundingBox
+            >>> self = BoundingBox.from_vectors((0, 0), (5, 10))
+            >>> str(self)
+            <BoundingBox([0.0, 0.0, 5.0, 10.0])>
+        """
+        return str(self.coords)
+
+    @classmethod
+    def from_vectors(cls, ul, lr):
+        """
+        Args:
+            ul (float): upper left point
+            lr (float): lower right point
+
+        Example:
+            >>> from vital.types import BoundingBox
+            >>> self = BoundingBox.from_vectors((0, 0), (5, 10))
+            >>> self.coords
+            [0.0, 0.0, 5.0, 10.0]
+        """
+        self = cls(ul, lr, None)
+        return self
+
+    @classmethod
+    def from_point_width_height(cls, pt1, width, height):
+        """
+        Args:
+            pt1 (float): upper left point
+            width (float): bbox width
+            height (float): bbox height
+
+        Example:
+            >>> from vital.types import BoundingBox
+            >>> self = BoundingBox.from_point_width_height((0, 0), 10, 10)
+            >>> self.coords
+            [0.0, 0.0, 10.0, 10.0]
+        """
+        self = cls(pt1, width, height, None)
+        return self
+
+    @classmethod
+    def from_coords(cls, xmin, ymin, xmax, ymax):
+        """
+        Args:
+            xmin (float): minimum x-coord
+            ymin (float): minimum y-coord
+            xmax (float): maximum x-coord
+            ymax (float): maximum y-coord
+
+        Example:
+            >>> from vital.types import BoundingBox
+            >>> self = BoundingBox.from_coords(1, 2, 3, 4)
+            >>> self.coords
+            [1.0, 2.0, 3.0, 4.0]
+        """
+        self = cls(xmin, ymin, xmax, ymax)
+        return self
+
+    @property
+    def coords(self):
+        return [self.min_x(), self.min_y(), self.max_x(), self.max_y()]
+
+    def __index__(self, index):
+        return self.coords[index]

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (C) 2011 by Calvin Spealman (ironfroggy@gmail.com)
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -35,6 +36,10 @@ import sys
 import os
 
 from importlib import import_module
+import logging
+
+log = logging.getLogger(__name__)
+print = log.info
 
 
 class Loader(object):
@@ -153,7 +158,7 @@ class ModuleLoader(Loader):
                 print('import_path = {!r}'.format(import_path))
                 module = import_module(import_path)
             except ImportError as e:
-                print('[DEBUG] Could not import: {} Reason: {}'.format(
+                print('[WARNING] Could not import: {} Reason: {}'.format(
                     import_path, e))
                 module = None
 

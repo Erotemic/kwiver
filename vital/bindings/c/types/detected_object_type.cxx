@@ -58,7 +58,6 @@ vital_detected_object_type_t* vital_detected_object_type_new()
   STANDARD_CATCH(
     "C::detected_object_type:new", 0,
     auto dot_sptr = std::make_shared< kwiver::vital::detected_object_type> ();
-
     kwiver::vital_c::DOT_SPTR_CACHE.store( dot_sptr );
     return reinterpret_cast<vital_detected_object_type_t*>( dot_sptr.get() );
   );
@@ -85,14 +84,14 @@ vital_detected_object_type_t* vital_detected_object_type_new_from_list( vital_de
 {
   STANDARD_CATCH(
     "C::detected_object_type:new_from_list", 0,
-    std::vector<std::string> names;
-    std::vector< double > scores;
+    std::vector<std::string> names_vec;
+    std::vector< double > scores_vec;
     for (size_t i = 0; i < count; ++i)
     {
-      names.push_back(class_names[i]);
-      scores.push_back(scores[i]);
+      names_vec.push_back(class_names[i]);
+      scores_vec.push_back(scores[i]);
     }
-    auto dot_sptr = std::make_shared< kwiver::vital::detected_object_type> ( names, scores );
+    auto dot_sptr = std::make_shared< kwiver::vital::detected_object_type> ( names_vec, scores_vec );
     kwiver::vital_c::DOT_SPTR_CACHE.store( dot_sptr );
     return reinterpret_cast<vital_detected_object_type_t*>( dot_sptr.get() );
   );
@@ -179,12 +178,14 @@ void vital_detected_object_type_delete_score( vital_detected_object_type_t* obj,
 
 // ------------------------------------------------------------------
 char** vital_detected_object_type_class_names( vital_detected_object_type_t* obj,
-                                               double thresh )
+                                               double thresh = kwiver::vital::detected_object_type::INVALID_SCORE )
 {
   STANDARD_CATCH(
     "C::detected_object_type:class_names", 0,
 
-    auto name_vector = kwiver::vital_c::DOT_SPTR_CACHE.get( obj )->class_names();
+    // FIXME: we are allocating memory and trusting the user to free it.
+    // perhaps we should do something else?
+    auto name_vector = kwiver::vital_c::DOT_SPTR_CACHE.get( obj )->class_names(thresh);
     char** name_list = (char **) calloc( sizeof( char *), name_vector.size() +1 );
 
     for ( size_t i = 0; i < name_vector.size(); ++i )
@@ -199,11 +200,13 @@ char** vital_detected_object_type_class_names( vital_detected_object_type_t* obj
 
 
 // ------------------------------------------------------------------
-char** vital_detected_object_type_all_class_names(vital_detected_object_type_t* obj)
+char** vital_detected_object_type_all_class_names()
 {
   STANDARD_CATCH(
     "C::detected_object_type:all_class_names", 0,
 
+    // FIXME: we are allocating memory and trusting the user to free it.
+    // perhaps we should do something else?
     auto name_vector = kwiver::vital::detected_object_type::all_class_names();
     char** name_list = (char **) calloc( sizeof( char *), name_vector.size() +1 );
 
@@ -215,4 +218,27 @@ char** vital_detected_object_type_all_class_names(vital_detected_object_type_t* 
     return name_list;
     );
   return 0;
+}
+
+
+// ------------------------------------------------------------------
+size_t vital_detected_object_type_size(vital_detected_object_type_t* obj)
+{
+  STANDARD_CATCH(
+    "C::detected_object_type:size", 0,
+    return kwiver::vital_c::DOT_SPTR_CACHE.get( obj )->size();
+    );
+  return -1;
+}
+
+
+// ------------------------------------------------------------------
+size_t vital_detected_object_type_all_class_size()
+{
+  STANDARD_CATCH(
+    "C::detected_object_type:all_class_size", 0,
+    auto name_vector = kwiver::vital::detected_object_type::all_class_names();
+    return name_vector.size();
+    );
+  return -1;
 }

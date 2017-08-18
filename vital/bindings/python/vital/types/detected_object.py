@@ -40,24 +40,33 @@ from vital.util import VitalErrorHandle
 
 from vital.types import BoundingBox
 from vital.types import DetectedObjectType
+from vital.types.mixins import NiceRepr
 
 
-class DetectedObject (VitalObject):
+class DetectedObject (VitalObject, NiceRepr):
     """
     vital::detected_object interface class
     """
 
-    def __init__(self, bbox=None, confid=None, tot=None, from_cptr=None):
+    def __init__(self, bbox=None, confid=0.0, tot=None, from_cptr=None):
         """
         Create a simple detected object type
 
-         """
+        Args:
+            bbox (BoundingBox or list): if given as a list, args are used
+                to create a new BoundingBox instance.
+            confid (float): numeric confidence
+            tot (DetectedObjectType): detected object type
+        """
+        bbox = BoundingBox.cast(bbox)
         super(DetectedObject, self).__init__(from_cptr, bbox, confid, tot)
 
     def _new(self, bbox, confid, tot):
         do_new = self.VITAL_LIB.vital_detected_object_new_with_bbox
         do_new.argtypes = [BoundingBox.C_TYPE_PTR, ctypes.c_double, DetectedObjectType.C_TYPE_PTR]
         do_new.restype = self.C_TYPE_PTR
+        if bbox is None:
+            raise ValueError('c-bindings will segfault if passed a bbox of None')
         return do_new(bbox, ctypes.c_double( confid ), tot)
 
     def _destroy(self):
@@ -78,28 +87,76 @@ class DetectedObject (VitalObject):
         return BoundingBox( from_cptr=do_bb_cpy( bb_c_ptr ) )
 
     def set_bounding_box(self, bbox):
+        """
+        Args:
+            bbox (BoundingBox or list): if given as a list, args are used
+                to create a new BoundingBox instance.
+        """
         do_sbb = self.VITAL_LIB.vital_detected_object_set_bounding_box
         do_sbb.argtypes = [self.C_TYPE_PTR, BoundingBox.C_TYPE_PTR]
         return do_sbb(self, bbox)
 
     def confidence(self):
+        """
+        Example:
+            >>> from vital.types import DetectedObject
+            >>> from vital.types import DetectedObjectType
+            >>> self = DetectedObject([0, 0, 1, 1])
+            >>> conf1 = self.confidence()
+            >>> self.set_confidence(2.0)
+            >>> conf2 = self.confidence()
+            >>> assert conf1 == 0
+            >>> assert conf2 == 2
+        """
         do_conf = self.VITAL_LIB.vital_detected_object_confidence
         do_conf.argtypes = [self.C_TYPE_PTR]
         do_conf.restype = ctypes.c_double
-        return do_sbb(self)
+        return do_conf(self)
 
     def set_confidence(self, confid):
         do_sc = self.VITAL_LIB.vital_detected_object_set_confidence
         do_sc.argtypes = [self.C_TYPE_PTR, ctypes.c_double]
-        do_sbb(self, confid)
+        do_sc(self, confid)
 
     def type(self):
         do_ty = self.VITAL_LIB.vital_detected_object_get_type
         do_ty.argtypes = [self.C_TYPE_PTR]
         do_ty.restype = DetectedObjectType.C_TYPE_PTR
-        return do_ty(self)
+        c_ptr = do_ty(self)
+        if bool(c_ptr) is False:
+            # the pointer is null
+            return None
+        else:
+            obj_type = DetectedObjectType(from_cptr=c_ptr)
+            return obj_type
 
     def set_type(self, ob_type):
+        """
+        Example:
+            >>> from vital.types import DetectedObject
+            >>> from vital.types import DetectedObjectType
+            >>> self = DetectedObject([0, 0, 1, 1])
+            >>> ob_type = DetectedObjectType.cast({'cat': 1.0})
+            >>> ob_type2 = self.type()
+        """
+        ob_type = DetectedObjectType.cast(ob_type)
         do_ty = self.VITAL_LIB.vital_detected_object_set_type
         do_ty.argtypes = [self.C_TYPE_PTR, DetectedObjectType.C_TYPE_PTR]
         do_ty(self, ob_type)
+
+    # --- Python convineince functions ---
+
+    def __nice__(self):
+        """
+        Example:
+            >>> from vital.types import DetectedObject
+            >>> self = DetectedObject([(0, 0), (5, 10)])
+            >>> str(self)
+            <DetectedObject([0.0, 0.0, 5.0, 10.0], ?type?, 0.0)>
+        """
+        conf = self.confidence()
+        # FIXME: get types working correctly
+        # name = self.type().most_likely_class()
+        name = '?type?'
+        bbox = self.bounding_box().coords
+        return '{}, {}, {}'.format(bbox, name, conf)

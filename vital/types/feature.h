@@ -44,9 +44,9 @@
 #include <vital/vital_config.h>
 #include <vital/io/eigen_io.h>
 
-#include <iostream>
-#include <typeinfo>
-#include <memory>
+//#include <iostream>
+//#include <typeinfo>
+//#include <memory>
 
 namespace kwiver {
 namespace vital {
