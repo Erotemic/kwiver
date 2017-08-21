@@ -45,6 +45,12 @@
 namespace kwiver {
 namespace vital {
 
+
+class feature_set;
+
+/// Shared pointer for base feature_set type
+typedef std::shared_ptr< feature_set > feature_set_sptr;
+
 /// An abstract ordered collection of 2D image feature points.
 /**
  * The base class feature_set is abstract and provides an interface for
@@ -52,9 +58,10 @@ namespace vital {
  * stores the data as a vector of features and returns it.  Other derived
  * classes can store the data in other formats and convert on demand.
  */
-class feature_set
+class VITAL_EXPORT feature_set
 {
 public:
+
   /// Destructor
   virtual ~feature_set() VITAL_DEFAULT_DTOR
 
@@ -62,11 +69,8 @@ public:
   virtual size_t size() const = 0;
 
   /// Return a vector of feature shared pointers
-  virtual std::vector< feature_sptr > features() const = 0;
+  virtual feature::vector_t features() const = 0;
 };
-
-/// Shared pointer for base feature_set type
-typedef std::shared_ptr< feature_set > feature_set_sptr;
 
 
 /// A concrete feature set that simply wraps a vector of features.
@@ -78,19 +82,19 @@ public:
   simple_feature_set() { }
 
   /// Constructor from a vector of features
-  explicit simple_feature_set( const std::vector< feature_sptr >& features )
+  explicit simple_feature_set( const feature::vector_t& features )
     : data_( features ) { }
 
   /// Return the number of feature in the set
   virtual size_t size() const { return data_.size(); }
 
   /// Return a vector of feature shared pointers
-  virtual std::vector< feature_sptr > features() const { return data_; }
+  virtual feature::vector_t features() const { return data_; }
 
 
 protected:
   /// The vector of features
-  std::vector< feature_sptr > data_;
+  feature::vector_t data_;
 };
 
 

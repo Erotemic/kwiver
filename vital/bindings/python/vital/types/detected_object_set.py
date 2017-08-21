@@ -39,7 +39,7 @@ from vital.types import DetectedObject
 from vital.util import free_void_ptr
 from vital.util import VitalObject
 from vital.util import VitalErrorHandle
-from vital.types.mixins import NiceRepr
+from vital.util.mixins import NiceRepr
 
 
 class DetectedObjectSet (VitalObject, NiceRepr):

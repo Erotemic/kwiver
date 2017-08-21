@@ -31,6 +31,8 @@
 /**
  * \file
  * \brief C interface to vital::feature
+ *
+ * \seealso ../../types/feature.h
  */
 
 #ifndef VITAL_C_FEATURE_H_

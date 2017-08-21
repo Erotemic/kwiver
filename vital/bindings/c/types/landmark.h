@@ -31,6 +31,8 @@
 /**
  * \file
  * \brief Landmark C interface
+ *
+ * \seealso ../../types/landmark.h
  */
 
 #ifndef VITAL_C_LANDMARK_H_

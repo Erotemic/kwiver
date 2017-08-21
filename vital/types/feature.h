@@ -51,6 +51,11 @@
 namespace kwiver {
 namespace vital {
 
+class feature;
+
+/// Shared pointer for base feature type
+typedef std::shared_ptr< feature > feature_sptr;
+
 /// A representation of a 2D image feature point.
 /**
  * The base class of features is abstract and provides a
@@ -60,6 +65,8 @@ namespace vital {
 class feature
 {
 public:
+  typedef std::vector< feature_sptr > vector_t;
+
   /// Destructor
   virtual ~feature() VITAL_DEFAULT_DTOR
 
@@ -97,9 +104,6 @@ public:
     return ! operator==(other);
   }
 };
-
-/// Shared pointer for base feature type
-typedef std::shared_ptr< feature > feature_sptr;
 
 /// output stream operator for base class feature
 /**

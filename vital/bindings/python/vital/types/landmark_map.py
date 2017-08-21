@@ -37,6 +37,7 @@ import ctypes
 
 from vital.types import Landmark
 from vital.util import VitalObject, free_void_ptr
+from six.moves import range
 
 
 class LandmarkMap (VitalObject):
@@ -142,7 +143,7 @@ class LandmarkMap (VitalObject):
 
         d = {}
         s = self.size
-        for i in xrange(s):
+        for i in range(s):
             # Need to copy ctypes pointer object
             l_cptr = Landmark.c_ptr_type()(lm_landmarks[i].contents)
             d[lm_ids[i]] = Landmark(from_cptr=l_cptr)

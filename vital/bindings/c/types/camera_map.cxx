@@ -31,6 +31,8 @@
 /**
  * \file
  * \brief C interface implementation for vital::camera_map
+ *
+ * \seealso ../../types/camera_map.h
  */
 
 #include "camera_map.h"
@@ -125,6 +127,7 @@ void vital_camera_map_get_map( vital_camera_map_t *cam_map,
     *frame_numbers = (int64_t*)malloc(sizeof(int64_t) * *length);
     *cameras = (vital_camera_t**)malloc(sizeof(vital_camera_t*) * *length);
     size_t i=0;
+    // type(p) = camera_sptr const&
     VITAL_FOREACH( vital::camera_map::map_camera_t::value_type const& p, map_cams )
     {
       (*frame_numbers)[i] = p.first;

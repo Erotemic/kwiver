@@ -55,6 +55,10 @@ kwiver_add_python_module( ${CMAKE_CURRENT_SOURCE_DIR}/feature.py
   vital/types
   feature )
 
+kwiver_add_python_module( ${CMAKE_CURRENT_SOURCE_DIR}/feature_set.py
+  vital/types
+  feature_set )
+
 kwiver_add_python_module( ${CMAKE_CURRENT_SOURCE_DIR}/feature_track_set.py
   vital/types
   feature_track_set )
@@ -102,7 +106,3 @@ kwiver_add_python_module( ${CMAKE_CURRENT_SOURCE_DIR}/track_set.py
 kwiver_add_python_module( ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py
   vital/types
   __init__ )
-
-kwiver_add_python_module( ${CMAKE_CURRENT_SOURCE_DIR}/mixins.py
-  vital/types
-  mixins )

@@ -1,5 +1,5 @@
 /*ckwg +29
- * Copyright 2016 by Kitware, Inc.
+ * Copyright 2013-2017 by Kitware, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,61 +30,61 @@
 
 /**
  * \file
- * \brief C interface to vital::detected_object_set class
+ * \brief core feature_set class interface
  *
- * \seealso ../../types/detected_object_set.h
+ * \seealso ../../types/feature_set.h
+ * \seealso ../../python/vital/types/feature_set.py
  */
 
-#ifndef VITAL_C_DETECTED_OBJECT_SET_H_
-#define VITAL_C_DETECTED_OBJECT_SET_H_
+#ifndef VITAL_C_FEATURE_SET_H_
+#define VITAL_C_FEATURE_SET_H_
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-#include <vital/bindings/c/error_handle.h>  // TODO
-#include <vital/bindings/c/vital_c_export.h>
-#include <vital/bindings/c/types/detected_object.h>
-#include <vital/bindings/c/types/detected_object_set.h>
-
 #include <stddef.h>
+#include <stdint.h>
 
-/// VITAL Image opaque structure
-typedef struct vital_detected_object_set_s vital_detected_object_set_t;
+#include <vital/bindings/c/error_handle.h>
+#include <vital/bindings/c/vital_c_export.h>
+#include <vital/bindings/c/types/feature.h>
+#include <vital/bindings/c/types/feature_set.h>
 
-VITAL_C_EXPORT
-vital_detected_object_set_t* vital_detected_object_set_new();
 
-VITAL_C_EXPORT
-vital_detected_object_set_t* vital_detected_object_set_new_from_list( vital_detected_object_t** dobj,
-                                                                      size_t n);
-
-VITAL_C_EXPORT
-void vital_detected_object_set_destroy( vital_detected_object_set_t* obj);
+/// Opaque structure for vital::feature_set
+typedef struct vital_feature_set_s vital_feature_set_t;
 
 VITAL_C_EXPORT
-void vital_detected_object_set_add( vital_detected_object_set_t* set,
-                                    vital_detected_object_t* obj );
+vital_feature_set_t* vital_feature_set_new_from_list(vital_feature_t const **features, size_t length, vital_error_handle_t *eh);
 
 VITAL_C_EXPORT
-size_t vital_detected_object_set_size( vital_detected_object_set_t* obj);
+vital_feature_set_t* vital_feature_set_new_empty(vital_error_handle_t *eh);
 
 VITAL_C_EXPORT
-void vital_detected_object_set_select_threshold( vital_detected_object_set_t* obj,
-                                                 double thresh,
-                                                 vital_detected_object_t*** output,
-                                                 size_t* length );
+void vital_feature_set_destroy(vital_feature_set_t *fset, vital_error_handle_t *eh);
 
 VITAL_C_EXPORT
-void vital_detected_object_set_select_class_threshold( vital_detected_object_set_t* obj,
-                                                       const char* class_name,
-                                                       double thresh,
-                                                       vital_detected_object_t*** output,
-                                                       size_t* length );
+size_t vital_feature_set_size(vital_feature_set_t const *fset, vital_error_handle_t *eh);
+
+VITAL_C_EXPORT
+void vital_feature_set_features(vital_feature_set_t const *fset, vital_feature_t ***features, vital_error_handle_t *eh);
+
+VITAL_C_EXPORT
+void vital_feature_set_getitems(vital_feature_set_t const *fset, size_t num, size_t *indices, vital_feature_t ***features, vital_error_handle_t *eh);
+
+VITAL_C_EXPORT
+void vital_feature_set_getitem(vital_feature_set_t *fset, size_t index, vital_feature_t **feature, vital_error_handle_t *eh);
+
+VITAL_C_EXPORT
+void vital_feature_set_delitem(vital_feature_set_t *fset, size_t index, vital_error_handle_t *eh);
+
+VITAL_C_EXPORT
+void vital_feature_set_add(vital_feature_set_t *fset, vital_feature_t *item, vital_error_handle_t *eh);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // VITAL_C_DETECTED_OBJECT_SET_H_
+#endif // VITAL_C_FEATURE_SET_H_

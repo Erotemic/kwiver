@@ -39,6 +39,7 @@ import ctypes
 import numpy
 
 from vital.util import VitalObject, TYPE_NAME_MAP
+from vital.util.mixins import NiceRepr
 from vital.types import (
     Covariance,
     EigenArray,
@@ -46,7 +47,12 @@ from vital.types import (
 )
 
 
-class Feature (VitalObject):
+class Feature (VitalObject, NiceRepr):
+    """
+    Example:
+        >>> from vital.types import Feature
+        >>> feat = Feature((0, 0))
+    """
 
     def __init__(self, loc=(0, 0), mag=0, scale=1, angle=0, rgb_color=None,
                  ctype=ctypes.c_double, from_cptr=None):
@@ -76,6 +82,9 @@ class Feature (VitalObject):
             self._datatype = TYPE_NAME_MAP[self.type_name]
             # noinspection PyProtectedMember
             self._tchar = self._datatype._type_
+
+    def __nice__(self):
+        return str(feat.location)
 
     def _new(self, loc, mag, scale, angle, rgb_color):
         loc = EigenArray.from_iterable(loc, target_ctype=self._datatype,
