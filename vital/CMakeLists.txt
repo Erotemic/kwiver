@@ -154,6 +154,7 @@ set( vital_public_headers
   types/query_plan.h
   types/rotation.h
   types/similarity.h
+  types/segmentation_image.h
   types/timestamp.h
   types/timestamp_config.h
   types/track.h
@@ -214,6 +215,7 @@ set( vital_sources
   types/query_plan.cxx
   types/rotation.cxx
   types/similarity.cxx
+  types/segmentation_image.cxx
   types/timestamp.cxx
   types/track.cxx
   types/track_descriptor.cxx
