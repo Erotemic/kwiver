@@ -84,8 +84,6 @@ protected:
   /// Image containing pixel segmentations
   image_container_sptr m_label_image_sptr;
 
-  image_container_sptr image() const { return m_label_image_sptr; }
-
   // TODO: Do we need a mapping from integer labels to string
   // DetectedObjectTypes?
   /*

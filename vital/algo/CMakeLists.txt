@@ -38,6 +38,7 @@ set( public_headers
   image_filter.h
   image_io.h
   image_object_detector.h
+  image_segmentor.h
   initialize_cameras_landmarks.h
   match_features.h
   optimize_cameras.h
@@ -83,6 +84,7 @@ set( sources
   image_filter.cxx
   image_io.cxx
   image_object_detector.cxx
+  image_segmentor.cxx
   initialize_cameras_landmarks.cxx
   match_features.cxx
   optimize_cameras.cxx
