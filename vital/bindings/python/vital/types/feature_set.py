@@ -117,6 +117,7 @@ class FeatureSet (VitalObject, NiceRepr):
 
     SeeAlso:
         ../../../c/types/feature_set.h
+        ../../types/feature_set.h
     """
 
     def __init__(self, feats=None, count=None, from_cptr=None):

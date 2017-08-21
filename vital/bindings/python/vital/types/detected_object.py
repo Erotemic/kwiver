@@ -46,6 +46,13 @@ from vital.types.mixins import NiceRepr
 class DetectedObject (VitalObject, NiceRepr):
     """
     vital::detected_object interface class
+
+    SeeAlso:
+        ../../../c/types/detected_object.h
+        ../../types/detected_object.h
+
+    TODO:
+        add mask getter / setter
     """
 
     def __init__(self, bbox=None, confid=0.0, tot=None, from_cptr=None):
