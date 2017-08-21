@@ -40,6 +40,7 @@
 
 #include <vital/types/descriptor_set.h>
 #include <vital/types/detected_object_set.h>
+#include <vital/types/segmentation_image.h>
 #include <vital/types/feature_set.h>
 #include <vital/types/feature_track_set.h>
 #include <vital/types/geo_corner_points.h>
@@ -91,6 +92,7 @@ create_type_trait( feature_track_set, "kwiver:feature_track_set", kwiver::vital:
 create_type_trait( object_track_set, "kwiver:object_track_set", kwiver::vital::object_track_set_sptr );
 create_type_trait( double_vector,  "kwiver:d_vector", kwiver::vital::double_vector_sptr );
 create_type_trait( detected_object_set, "kwiver:detected_object_set", kwiver::vital::detected_object_set_sptr );
+create_type_trait( segmentation_image, "kwiver:segmentation_image", kwiver::vital::segmentation_image_sptr );
 create_type_trait( track_descriptor_set, "kwiver:track_descriptor_set", kwiver::vital::track_descriptor_set_sptr );
 
 create_type_trait( homography_src_to_ref, "kwiver:s2r_homography", kwiver::vital::f2f_homography );
@@ -121,6 +123,7 @@ create_port_trait( track_set, track_set, "Set of arbitrary tracks." );
 create_port_trait( feature_track_set, feature_track_set, "Set of feature tracks." );
 create_port_trait( object_track_set, object_track_set, "Set of object tracks." );
 create_port_trait( detected_object_set, detected_object_set, "Set of detected objects." );
+create_port_trait( segmentation_image, segmentation_image, "Per-pixel segmentation." );
 create_port_trait( track_descriptor_set, track_descriptor_set, "Set of track descriptors." );
 
 create_port_trait( homography_src_to_ref, homography_src_to_ref, "Source image to ref image homography." );

@@ -16,7 +16,7 @@
  *    to endorse or promote products derived from this software without specific
  *    prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS IS''
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR
@@ -28,56 +28,44 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * \file
- * \brief Header defining abstract image object detector
- */
+#ifndef ARROWS_PROCESSES_IMAGE_SEGMENTOR_PROCESS_H
+#define ARROWS_PROCESSES_IMAGE_SEGMENTOR_PROCESS_H
 
-#ifndef VITAL_ALGO_IMAGE_SEGMENTOR_H_
-#define VITAL_ALGO_IMAGE_SEGMENTOR_H_
+#include <sprokit/pipeline/process.h>
 
-#include <vital/algo/algorithm.h>
-#include <vital/types/image_container.h>
-#include <vital/types/segmentation_image.h>
+#include "kwiver_processes_export.h"
 
-#include <vector>
+#include <vital/config/config_block.h>
 
 namespace kwiver {
-namespace vital {
-namespace algo {
 
 // ----------------------------------------------------------------
 /**
- * @brief Image object detector base class/
+ * @brief Image object detector process.
  *
  */
-class VITAL_ALGO_EXPORT image_segmentor
-: public algorithm_def<image_segmentor>
+class KWIVER_PROCESSES_NO_EXPORT image_segmentor_process
+  : public sprokit::process
 {
 public:
-  /// Return the name of this algorithm
-  static std::string static_type_name() { return "image_segmentor"; }
+  image_segmentor_process( kwiver::vital::config_block_sptr const& config );
+  virtual ~image_segmentor_process();
 
-  /// Segments the objects in an image
-  /**
-   * This method analyzes the supplied image and along with any saved
-   * context, returns a segmentation label for every pixel.
-   *
-   * \param image_data the image pixels
-   * \returns segmentation_image_sptr
-   */
-  virtual segmentation_image_sptr
-      segment( image_container_sptr image_data) const = 0;
 
 protected:
-  image_segmentor();
-};
+  virtual void _configure();
+  virtual void _step();
 
-/// Shared pointer for generic image_segmentor definition type.
-typedef std::shared_ptr<image_segmentor> image_segmentor_sptr;
+private:
+  void make_ports();
+  void make_config();
 
-} } } // end namespace
+  class priv;
+  const std::unique_ptr<priv> d;
+}; // end class object_detector_process
 
-#endif //VITAL_ALGO_IMAGE_SEGMENTOR_H_
 
 
+} // end namespace
+
+#endif /* ARROWS_PROCESSES_IMAGE_SEGMENTOR_PROCESS_H */
