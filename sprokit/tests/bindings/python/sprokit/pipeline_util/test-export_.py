@@ -1,4 +1,4 @@
-#!@PYTHON_EXECUTABLE@
+#!/usr/bin/env python
 #ckwg +28
 # Copyright 2011-2013 by Kitware, Inc.
 # All rights reserved.
@@ -31,7 +31,7 @@
 
 def test_import(path_unused):
     try:
-        import sprokit.pipeline_util.export_
+        import sprokit.pipeline_util.export_  # NOQA
     except:
         test_error("Failed to import the export_ module")
 
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     import sys
 
     if not len(sys.argv) == 5:
-        test_error("Expected four arguments")
+        raise ValueError("Error: Expected four arguments")
         sys.exit(1)
 
     testname = sys.argv[1]
@@ -79,6 +79,6 @@ if __name__ == '__main__':
 
     path = os.path.join(pipeline_dir, '%s.pipe' % testname)
 
-    from sprokit.test.test import *
+    from sprokit.test.test import (find_tests, test_error, run_test)
 
     run_test(testname, find_tests(locals()), path)

@@ -21,9 +21,9 @@ set(sprokit_output_dir         "${KWIVER_BINARY_DIR}")
 
 ## TODO replace sprokit macros with kwiver macros if possible
 # Sprokit macros
-include("${sprokit_source_dir}/conf/sprokit-macro-configure.cmake")
-include("${sprokit_source_dir}/conf/sprokit-macro-targets.cmake")
-include("${sprokit_source_dir}/conf/sprokit-macro-python.cmake")
+include("${sprokit_source_dir}/cmake/conf/sprokit-macro-configure.cmake")
+include("${sprokit_source_dir}/cmake/conf/sprokit-macro-targets.cmake")
+include("${sprokit_source_dir}/cmake/conf/sprokit-macro-python.cmake")
 
 # Support functions.
 include("${sprokit_source_dir}/cmake/support/pkgconfig.cmake")
@@ -60,7 +60,7 @@ if (KWIVER_ENABLE_TESTS)
   add_subdirectory(tests)
 endif ()
 
-add_subdirectory(conf)
+add_subdirectory(cmake/conf)
 
 if (KWIVER_ENABLE_PROCESSES)
   include_directories( ${CMAKE_CURRENT_BINARY_DIR} )

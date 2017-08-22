@@ -17,7 +17,7 @@ endif ()
 set(SPROKIT_LIBRARY_DIRS        ${SPROKIT_LIBRARY_DIR}  ${Boost_LIBRARY_DIRS})
 set(SPROKIT_MODULE_DIR         "${SPROKIT_LIBRARY_DIR}/sprokit")
 set(SPROKIT_DOCUMENTATION_DIR  "@sprokit_binary_dir@/doc")
-set(SPROKIT_CMAKE_DIR          "@sprokit_source_dir@/conf")
+set(SPROKIT_CMAKE_DIR          "@sprokit_source_dir@/cmake/conf")
 
 set(KWIVER_ENABLE_PYTHON           "@KWIVER_ENABLE_PYTHON@")
 

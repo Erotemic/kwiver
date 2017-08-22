@@ -25,23 +25,64 @@ else ()
     "${PYTHON_EXECUTABLE}")
 endif ()
 
+
+# TODO: should these funcs be moved to sprokit utils?
+# Perhaps recfitied with kwiver versions?
+
 ###
 #
+# """
+# Configures the python test file to the ctest bin directory
+# Also, configures the module to the sprokit/tests directory
+# (Ideally, the tests would be defined within the python module, as per the
+#  python standard, then we would add the python module there and then add
+#  tests)
+#
+# Args:
+#     group: the suffix of the python file. Weird. We probably should just
+#     use the filename.
+#     input: filename of the test .py file (includes the extension)
+#
+# SeeAlso:
+#     ../../../cmake/conf/sprokit-macro-tests.cmake
+#     ../../../cmake/conf/sprokit-macro-python.cmake
+#     ../../../cmake/conf/sprokit-macro-configure.cmake
+#     ../../../cmake/support/tests.cmake
+# """
 function (sprokit_build_python_test group input)
-  if (CMAKE_CONFIGURATION_TYPES)
-    set(sprokit_configure_cmake_args
-      "\"-Dconfig=${CMAKE_CFG_INTDIR}/\"")
-  endif ()
-  sprokit_configure_file(test-python-${group}
-    "${CMAKE_CURRENT_SOURCE_DIR}/${input}"
-    "${sprokit_test_output_path}/\${config}test-python-${group}"
-    PYTHON_EXECUTABLE)
 
+  if (CMAKE_CONFIGURATION_TYPES)
+      set(sprokit_configure_cmake_args
+          "\"-Dconfig=${CMAKE_CFG_INTDIR}/\"")
+  endif ()
+
+  set(name test-python-${group})
+  set(source "${CMAKE_CURRENT_SOURCE_DIR}/${input}")
+  set(dest "${sprokit_test_output_path}/\${config}test-python-${group}")
+
+  if (KWIVER_SYMLINK_PYTHON)
+      sprokit_symlink_file(${name} ${source} ${dest} PYTHON_EXECUTABLE)
+  else()
+      sprokit_configure_file(${name} ${source} ${dest} PYTHON_EXECUTABLE)
+  endif()
   sprokit_declare_tooled_test(python-${group})
+
+  # HACK: add the tests to the python module.
+  # Ideally the python-tests would exist in the source directory
+  # This can be removed once this move takes place.
+  get_filename_component(module ${input} NAME_WE)
+  set(modpath "sprokit/tests")
+  set(path "${CMAKE_CURRENT_SOURCE_DIR}/${input}")
+  sprokit_add_python_module(${path} ${modpath} ${module})
+
 endfunction ()
 
+
 ###
 #
+# """
+# Calls CMake `add_test` function under the hood
+# """
 function (sprokit_add_python_test group instance)
   set(python_module_path    "${sprokit_python_output_path}/${sprokit_python_subdir}")
   set(python_chdir          ".")
@@ -51,16 +92,36 @@ function (sprokit_add_python_test group instance)
     set(python_chdir           "$<CONFIGURATION>")
   endif ()
 
-  _sprokit_python_site_package_dir( site_dir )
+  # Note: `sprokit_test_runner` is set to the python executable which is
+  # implicitly passed down to sprokit_add_tooled_test.
+
+  _kwiver_python_site_package_dir( site_dir )
   sprokit_add_tooled_test(python-${group} ${instance}
     "${python_chdir}" "${python_module_path}/${site_dir}" ${ARGN})
 endfunction ()
 
+
 ###
 #
+# """
+# Searches test .py files for functions that begin with "test" and creates a
+# separate `ctest` for each. Ideally we would just map the output from
+# something like `py.test` to `ctest` instead.
+#
+# Args:
+#     group: the test is registered with this ctests group
+#     file: filename of the test .py file (includes the extension)
+#
+# SeeAlso:
+#     kwiver/CMake/utils/kwiver-utils-python-tests.cmake - defines kwiver_discover_python_tests
+#     kwiver/sprokit/tests/bindings/python/sprokit/pipeline/CMakeLists.txt - uses this function
+# """
 function (sprokit_discover_python_tests group file)
+
   file(STRINGS "${file}" test_lines)
   set(properties)
+
+  set(group "${group}.py")
 
   sprokit_build_python_test("${group}" "${file}")
 
@@ -68,6 +129,8 @@ function (sprokit_discover_python_tests group file)
     set(test_name)
     set(property)
 
+    # Find python functions that start with test.
+    # perhaps use AST parsing in the future?
     string(REGEX MATCH "^def test_([A-Za-z_]+)\\(.*\\):$"
       match "${test_line}")
     if (match)
@@ -98,6 +161,7 @@ function (sprokit_discover_python_tests group file)
     endif ()
   endforeach ()
 endfunction ()
+
 
 add_subdirectory(test)
 

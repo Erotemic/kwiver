@@ -17,7 +17,6 @@ else ()
 
 endif ()
 
-
 set(kwiver_test_data_directory  "${CMAKE_CURRENT_SOURCE_DIR}/data")
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}")

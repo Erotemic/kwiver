@@ -11,7 +11,8 @@ include(CMakeParseArguments)
 # Top level configuration target
 add_custom_target(kwiver_configure ALL)
 
-#+
+
+# """
 # Configure the given sourcefile to the given destfile
 #
 #   kwiver_configure_file( name sourcefile destfile [var1 [var2 ...]]
@@ -34,7 +35,10 @@ add_custom_target(kwiver_configure ALL)
 # ``__SOURCE_PATH__`` are reserved by this method for additional configuration
 # purposes, so don't use them as configuration variables in the file you are
 # trying to configure.
-#-
+#
+# SeeAlso:
+#     kwiver/sprokit/cmake/conf/sprokit-macro-configure.cmake
+# """
 function(kwiver_configure_file name source dest)
   set(multiValueArgs DEPENDS)
   cmake_parse_arguments(mcf "" "" "${multiValueArgs}" ${ARGN})
@@ -84,3 +88,50 @@ function(kwiver_configure_file name source dest)
       )
   endif()
 endfunction()
+
+
+# """
+# Mimics a `kwiver_configure_file`, but will symlink `source` to `dest`
+# directly without any configureation. This should only be used for dynamic
+# languages like python (which really shouldn't need any configure strings
+# because they are DYNAMIC!)
+#
+# The only thing that seems to be "configurable" in the python files
+# is the python executable in the shebang, but this can just be set to
+# `/bin/env python` instead
+#
+# SeeAlso:
+#     kwiver/CMake/utils/kwiver-utils-python.cmake
+#     kwiver/sprokit/cmake/conf/sprokit-macro-configure.cmake
+# """
+function (kwiver_symlink_file name source dest)
+
+  if(EXISTS ${dest} AND NOT IS_SYMLINK ${dest})
+    # If our target it not a symlink, then remove it so we can replace it
+    file(REMOVE ${dest})
+  endif()
+
+  add_custom_command(
+    OUTPUT  "${dest}"
+    COMMAND "${CMAKE_COMMAND}" -E create_symlink ${source} ${dest}
+    DEPENDS "${source}"
+    COMMENT "Symlink-configuring ${name} file \"${source}\" -> \"${dest}\""
+    )
+
+
+  # This passes if not defined or a false-evaluating value
+  if(NOT no_configure_target)
+    add_custom_target(configure-${name}
+      DEPENDS "${dest}"
+      SOURCES "${source}"   # Adding source for IDE purposes
+      )
+
+    source_group("Configured Files"
+      FILES "${source}"
+      )
+
+    add_dependencies(kwiver_configure
+      configure-${name}
+      )
+  endif()
+endfunction ()

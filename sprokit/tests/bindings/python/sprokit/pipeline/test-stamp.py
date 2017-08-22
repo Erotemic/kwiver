@@ -1,4 +1,4 @@
-#!@PYTHON_EXECUTABLE@
+#!/usr/bin/env python
 #ckwg +28
 # Copyright 2011-2013 by Kitware, Inc.
 # All rights reserved.
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     import sys
 
     if not len(sys.argv) == 4:
-        test_error("Expected three arguments")
+        raise ValueError("Error: Expected three arguments. \"name-of-test\" \"new cwd\" \"python path to add\"")
         sys.exit(1)
 
     testname = sys.argv[1]
@@ -76,6 +76,6 @@ if __name__ == '__main__':
 
     sys.path.append(sys.argv[3])
 
-    from sprokit.test.test import *
+    from sprokit.test.test import (find_tests, test_error, run_test)
 
     run_test(testname, find_tests(locals()))

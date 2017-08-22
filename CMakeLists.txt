@@ -99,6 +99,11 @@ CMAKE_DEPENDENT_OPTION( KWIVER_ENABLE_PYTHON    "Enable python code" OFF
   KWIVER_ENABLE_C_BINDINGS OFF )
 
 if (KWIVER_ENABLE_PYTHON)
+
+  if (NOT WIN32)
+    OPTION(KWIVER_SYMLINK_PYTHON "Symlink python files instead of copying. Allows for more dynamic python development." Off)
+  endif()
+
   if ( NOT KWIVER_ENABLE_C_BINDINGS )
     message( SEND_ERROR  "Python can not be enabled unless KWIVER_ENABLE_C_BINDINGS is also enabled." )
   endif()
@@ -239,7 +244,7 @@ if ( KWIVER_ENABLE_LOG4CXX )
   if(WIN32)
     message(STATUS "Log4CXX is not supported on windows, if no other logger is provided, the default will be used")
   endif()
-  
+
 endif()
 
 ###
@@ -271,7 +276,7 @@ endif()
 
 if ( KWIVER_ENABLE_MATLAB )
   file( APPEND "${KWIVER_SETUP_SCRIPT_FILE}" "export LD_LIBRARY_PATH=${Matlab_LIBRARY_DIR}:$LD_LIBRARY_PATH\n" )
-  
+
   file( APPEND "${KWIVER_SETUP_BATCH_FILE}" "set PATH=%PATH%;${Matlab_LIBRARY_DIR}\n" )
 endif()
 

@@ -30,6 +30,7 @@ if ( NOT TARGET configure)
 add_custom_target(configure ALL)
 endif()
 
+
 function (int_sprokit_configure_file name source dest)
   file(WRITE "${configure_script}"
     "# Configure script for \"${source}\" -> \"${dest}\"\n")
@@ -72,6 +73,10 @@ configure_file(
       ADDITIONAL_MAKE_CLEAN_FILES "${clean_files}")
 endfunction ()
 
+
+# """
+# Core configuration logic
+# """
 function (sprokit_configure_file_w_uid uid name source dest)
   set(configure_script
     "${CMAKE_CURRENT_BINARY_DIR}/configure.${name}.cmake")
@@ -105,9 +110,61 @@ function (sprokit_configure_file_w_uid uid name source dest)
   endif ()
 endfunction ()
 
+
+# """
+# Mimics a sprokit_configure_file_w_uid, but will symlink `source` to `dest`
+# directly without any configureation. This should only be used for dynamic
+# languages like python (which really shouldn't need any configure strings
+# because they are DYNAMIC!)
+#
+# The only thing that seems to be "configurable" in the python files
+# is the python executable in the shebang, but this can just be set to
+# `/bin/env python` instead
+#
+# SeeAlso:
+#     kwiver/CMake/utils/kwiver-utils-configuration.cmake
+# """
+function (sprokit_symlink_file_w_uid uid name source dest)
+
+  if(EXISTS ${dest} AND NOT IS_SYMLINK ${dest})
+    # If our target it not a symlink, then remove it so we can replace it
+    file(REMOVE ${dest})
+  endif()
+
+  add_custom_command(
+    OUTPUT  "${dest}"
+    COMMAND "${CMAKE_COMMAND}" -E create_symlink ${source} ${dest}
+    DEPENDS "${source}"
+    COMMENT "Symlink-configuring ${name} file \"${source}\" -> \"${dest}\""
+    )
+
+  if (NOT no_configure_target)
+    add_custom_target(configure-${uid} ${all}
+      DEPENDS "${dest}"
+      SOURCES "${source}")
+    source_group("Configured Files"
+      FILES "${source}")
+    add_dependencies(configure
+      configure-${uid})
+  endif()
+endfunction ()
+
+
+# """
+# Simply calls sprokit_symlink_file_w_uid with the name being the uid
+# """
+function (sprokit_symlink_file name source dest)
+  sprokit_symlink_file_w_uid(${name} ${name} "${source}" "${dest}" ${ARGN})
+endfunction ()
+
+
+# """
+# Simply calls sprokit_configure_file_w_uid with the name being the uid
+# """
 function (sprokit_configure_file name source dest)
   sprokit_configure_file_w_uid(${name} ${name} "${source}" "${dest}" ${ARGN})
 endfunction ()
+
 
 function (sprokit_configure_file_always name source dest)
   set(extra_output
@@ -115,6 +172,7 @@ function (sprokit_configure_file_always name source dest)
 
   sprokit_configure_file(${name} "${source}" "${dest}" ${ARGN})
 endfunction ()
+
 
 function (sprokit_configure_directory name sourcedir destdir)
   set(no_configure_target TRUE)

@@ -1,4 +1,4 @@
-#!@PYTHON_EXECUTABLE@
+#!/usr/bin/env python
 #ckwg +28
 # Copyright 2012-2013 by Kitware, Inc.
 # All rights reserved.
@@ -31,7 +31,7 @@
 
 def test_import():
     try:
-        import sprokit.modules.modules
+        import sprokit.modules.modules  # NOQA
     except:
         test_error("Failed to import the modules module")
 
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     import sys
 
     if not len(sys.argv) == 4:
-        test_error("Expected three arguments")
+        raise ValueError("Error: Expected three arguments")
         sys.exit(1)
 
     testname = sys.argv[1]
@@ -111,6 +111,6 @@ if __name__ == '__main__':
 
     sys.path.append(sys.argv[3])
 
-    from sprokit.test.test import *
+    from sprokit.test.test import (find_tests, test_error, run_test)
 
     run_test(testname, find_tests(locals()))
