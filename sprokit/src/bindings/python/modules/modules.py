@@ -69,9 +69,8 @@ def load_python_modules():
 
     envvar = 'SPROKIT_PYTHON_MODULES'
 
-    if envvar in os.environ:
-        extra_modules = os.environ[envvar]
-        packages += extra_modules.split(os.pathsep)
+    extra_modules = os.environ.get(envvar, '')
+    packages += extra_modules.split(os.pathsep)
 
     loader = loaders.ModuleLoader()
     all_modules = []

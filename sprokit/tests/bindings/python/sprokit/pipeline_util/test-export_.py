@@ -39,7 +39,7 @@ def test_import(path_unused):
 def test_simple_pipeline(path):
     import os
 
-    from sprokit.pipeline import pipeline
+    from sprokit.pipeline import pipeline  # NOQA
     from sprokit.pipeline import modules
     from sprokit.pipeline_util import bake
     from sprokit.pipeline_util import export_
@@ -82,3 +82,20 @@ if __name__ == '__main__':
     from sprokit.test.test import (find_tests, test_error, run_test)
 
     run_test(testname, find_tests(locals()), path)
+
+# if __name__ == '__main__':
+#     r"""
+#     CommandLine:
+#         python -m sprokit.tests.test-utils
+#     """
+#     import pytest
+#     import sys
+#     argv = list(sys.argv[1:])
+#     if len(argv) > 0 and argv[0] in vars():
+#         # If arg[0] is a function in this file put it in pytest format
+#         argv[0] = __file__ + '::' + argv[0]
+#         argv.append('-s')  # dont capture stdout for single tests
+#     else:
+#         # ensure args refer to this file
+#         argv.insert(0, __file__)
+#     pytest.main(argv)

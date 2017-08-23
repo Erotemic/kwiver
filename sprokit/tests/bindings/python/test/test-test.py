@@ -27,6 +27,9 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+"""
+This module can likely be depricated
+"""
 
 try:
     from sprokit.test import test
@@ -34,39 +37,25 @@ except ImportError:
     pass
 
 
-# TEST_PROPERTY(WILL_FAIL, TRUE)
-# def test_return_code():
-#     import sys
-#     sys.exit(1)
-
-
-# TEST_PROPERTY(WILL_FAIL, TRUE)
 def test_error_string():
-    test.test_error('an error')
+    try:
+        test.test_error('an error')
+    except Exception as ex:
+        pass
+    else:
+        raise AssertionError('Should have raised an exception')
 
 
-def test_error_string_mid():
-    import sys
-
-    sys.stderr.write('Test')
-    test.test_error('an error')
-
-
-# TEST_PROPERTY(WILL_FAIL, TRUE)
 def test_error_string_stdout():
     import sys
 
     sys.stdout.write('Error: an error\n')
 
 
-# TEST_PROPERTY(WILL_FAIL, TRUE)
 def test_error_string_second_line():
     """
     CommandLine:
         ctest -R error_string_second_line
-        python ~/code/VIAME/build/install/lib/python2.7/site-packages/sprokit/tests/test-test.py test_error_string_second_line
-        py.test ~/code/VIAME/build/install/lib/python2.7/site-packages/sprokit/tests/test-test.py test_error_string_second_line -s
-        py.test ~/code/VIAME/build/install/lib/python2.7/site-packages/sprokit/tests/test-test.py
     """
     import sys
 
@@ -86,72 +75,32 @@ def raise_exception():
 def test_expected_exception():
     test.expect_exception('when throwing an exception', NotImplementedError,
                            raise_exception)
+    print('correctly handled exception')
 
 
-# TEST_PROPERTY(WILL_FAIL, TRUE)
 def test_unexpected_exception():
-    test.expect_exception('when throwing an unexpected exception', SyntaxError,
-                          raise_exception)
+    try:
+        test.expect_exception('when throwing an unexpected exception', SyntaxError,
+                              raise_exception)
+    except AssertionError:
+        print('correctly handled exception')
+    else:
+        raise AssertionError('Should have raised an exception')
 
 
-# TEST_PROPERTY(ENVIRONMENT, TEST_ENVVAR=test_value)
-# def test_environment():
-#     import os
-
-#     envvar = 'TEST_ENVVAR'
-
-#     if envvar not in os.environ:
-#         test.test_error('failed to get environment from CTest')
-#     else:
-#         expected = 'test_value'
-
-#         envvalue = os.environ[envvar]
-
-#         if envvalue != expected:
-#             test.test_error('did not get expected value')
-
-
-# if __name__ == '__main__':
-#     import os
-#     import sys
-
-#     if not len(sys.argv) == 4:
-#         raise ValueError("Error: Expected three arguments")
-#         sys.exit(1)
-
-#     testname = sys.argv[1]
-
-#     os.chdir(sys.argv[2])
-
-#     sys.path.append(sys.argv[3])
-
-#     from sprokit.test.test import (find_tests, test_error, run_test,
-#                                    expect_exception)
-
-#     run_test(testname, find_tests(locals()))
 if __name__ == '__main__':
     r"""
     CommandLine:
-        TESTDIR=~/code/VIAME/build/install/lib/python2.7/site-packages/sprokit/tests/
-        export PYTHONPATH=$PYTHONPATH:$TESTDIR/tests
-
-        # Run everything
-            python $TESTDIR/test-test.py
-            py.test $TESTDIR/test-test.py -s --verbose
-
-        # Different ways to run a single test
-            python test-test.py test_error_string_second_line
-            py.test $TESTDIR/test-test.py::test_error_string_second_line -s
-            ctest -R python-test-error_string_second_line
-
+        python -m sprokit.tests.test-test -s --verbose
     """
     import sys
     import pytest
-    print('!!!sys.argv = {!r}'.format(sys.argv))
-    if len(sys.argv) > 1:
-        # Test a specific function
-        # pytest.main([__file__ + '::' + sys.argv[1], '-s', '--verbose'])
-        pytest.main([__file__ + '::' + sys.argv[1], '-s'])
+    argv = list(sys.argv[1:])
+    if len(argv) > 0 and argv[0] in vars():
+        # If arg[0] is a function in this file put it in pytest format
+        argv[0] = __file__ + '::' + argv[0]
+        argv.append('-s')  # dont capture stdout for single tests
     else:
-        # Test the entire module
-        pytest.main([__file__, '--doctest-modules', '--verbose'])
+        # ensure args refer to this file
+        argv.insert(0, __file__)
+    pytest.main(argv)

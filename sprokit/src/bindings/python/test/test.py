@@ -42,7 +42,9 @@ def find_tests(scope):
 def test_error(msg):
     import sys
 
-    sys.stderr.write("Error: %s\n" % msg)
+    err_msg = "Error: %s\n" % msg
+    sys.stderr.write(err_msg)
+    raise AssertionError(err_msg)
 
 
 def expect_exception(action, kind, func, *args, **kwargs):
@@ -81,6 +83,7 @@ def expect_exception(action, kind, func, *args, **kwargs):
 
 
 def run_test(testname, tests, *args, **kwargs):
+    """ DEPRICATE """
     if testname not in tests:
         import sys
 
