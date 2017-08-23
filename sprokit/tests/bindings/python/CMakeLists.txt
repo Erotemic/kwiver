@@ -52,8 +52,8 @@ endif ()
 function (sprokit_build_python_test group input)
 
   if (CMAKE_CONFIGURATION_TYPES)
-      set(sprokit_configure_cmake_args
-          "\"-Dconfig=${CMAKE_CFG_INTDIR}/\"")
+    set(sprokit_configure_cmake_args
+      "\"-Dconfig=${CMAKE_CFG_INTDIR}/\"")
   endif ()
 
   set(name test-python-${group})
