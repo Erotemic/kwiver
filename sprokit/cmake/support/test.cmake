@@ -89,27 +89,25 @@ function (_sprokit_declare_tooled_test test)
 endfunction ()
 
 
-# """
+###
+#
 # SeeAlso:
 #     ../conf/sprokit-macro-tests.cmake
-# """
+#
 function (sprokit_declare_tooled_test test)
   sprokit_declare_test(${test})
   _sprokit_declare_tooled_test(${test})
 endfunction ()
 
 
-# """
-# SeeAlso:
-#     ../conf/sprokit-macro-tests.cmake
-# """
 function (sprokit_build_tooled_test test libraries)
   sprokit_build_test(${test} ${libraries} ${ARGN})
   _sprokit_declare_tooled_test(${test})
 endfunction ()
 
 
-# """
+###
+#
 # Creates a custom target that runs a tooled test.
 #
 # Args:
@@ -117,7 +115,7 @@ endfunction ()
 #    test: group name
 #    instance: specific test name
 #    *ARGN: other args passed to `tool`
-# """
+#
 function (_sprokit_add_tooled_test tool test instance)
   add_custom_target(${tool}-${test}-${instance})
   add_custom_command(
@@ -136,7 +134,8 @@ function (_sprokit_add_tooled_test tool test instance)
 endfunction ()
 
 
-# """
+###
+#
 # Registers a test with ctest as well as other debugging and quality
 # assurance tools (hence tooled) such as valgrind, cachegrind, gprof, etc...
 #
@@ -147,7 +146,7 @@ endfunction ()
 #
 # SeeAlso:
 #     ../conf/sprokit-macro-tests.cmake::sprokit_add_test
-# """
+#
 function (sprokit_add_tooled_test test instance)
   sprokit_add_test(${test} ${instance} ${ARGN})
 

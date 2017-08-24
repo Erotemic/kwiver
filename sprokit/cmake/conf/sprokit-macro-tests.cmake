@@ -45,10 +45,9 @@ if (SPROKIT_TEST_ADD_TARGETS)
 endif ()
 
 
-# """
+###
 # Declares a test grouping. Use this when a test is not built using
 # `sprokit_build_test`.
-# """
 function (sprokit_declare_test name)
   if (NOT SPROKIT_TEST_ADD_TARGETS)
     return()
@@ -60,7 +59,8 @@ function (sprokit_declare_test name)
 endfunction ()
 
 
-# """
+###
+#
 # Builds a test and declares the test as well. The library passed as
 # libraryvar should contain the list of libraries to link.
 #
@@ -68,7 +68,7 @@ endfunction ()
 #    name :
 #    libraryvar :
 #    *ARGN : source files that will be built as a test
-# """
+#
 function (sprokit_build_test name libraries)
   add_executable(test-${name} ${ARGN})
   set_target_properties(test-${name}
@@ -81,7 +81,7 @@ function (sprokit_build_test name libraries)
 endfunction ()
 
 
-# """
+###
 # Adds a test to run. This runs the executable test-${name} with the
 # arguments ${instance} ${ARGN}. If enabled, it adds a target named
 # test-${name}-${instance} to be run by the build if wanted.
@@ -90,7 +90,7 @@ endfunction ()
 #     name :
 #     instance :
 #     *ARGN : additional command line args to be passed to the test
-# """
+#
 function (sprokit_add_test name instance)
   # TODO: Should this function be replaed by kwiver_add_test?
   if (TARGET test-${name})

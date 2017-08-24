@@ -69,13 +69,12 @@ endmacro ()
 
 ###
 #
-# """
 # Get canonical directory for python site packages.
 # It varys from system to system.
 #
 # Args:
 #    var_name : out-var that will be populated with the site-packages path
-# """
+#
 function ( _kwiver_python_site_package_dir    var_name)
   # This is run many times and should produce the same result, so we cache it
   if (_prev_python_exe STREQUAL PYTHON_EXECUTABLE)
@@ -152,7 +151,6 @@ endfunction ()
 
 ###
 #
-# """
 # kwiver_add_python_module(path modpath module)
 #
 # Installs a pure-Python module into the 'modpath' and puts it into the
@@ -171,7 +169,6 @@ endfunction ()
 #     ../../vital/bindings/python/vital/CMakeLists.txt
 #     ../../sprokit/processes/bindings/python/kwiver/CMakeLists.txt
 #     ../../sprokit/processes/bindings/python/kwiver/util/CMakeLists.txt
-# """
 function (kwiver_add_python_module path     modpath    module)
   _kwiver_create_safe_modpath("${modpath}" safe_modpath)
 
@@ -245,12 +242,11 @@ endfunction ()
 
 ###
 #
-# """
 # kwiver_create_python_init(modpath [module ...])
 #
 # Creates an __init__.py package file which imports the modules in the
 # arguments for the package.
-# """
+#
 function (kwiver_create_python_init    modpath)
   _kwiver_create_safe_modpath("${modpath}" safe_modpath)
 
@@ -274,10 +270,9 @@ endfunction ()
 
 ###
 #
-# """
 # SeeAlso:
 #     ../../sprokit/processes/python/CMakeLists.txt
-# """
+#
 function (kwiver_create_python_plugin_init modpath)
   _kwiver_create_safe_modpath("${modpath}" safe_modpath)
 

@@ -33,12 +33,12 @@ def test_import(path_unused):
     try:
         import sprokit.pipeline_util.bake  # NOQA
     except:
-        test_error("Failed to import the bake module")
+        raise AssertionError("Failed to import the bake module")
 
 
 def test_simple_pipeline(path):
-    from sprokit.pipeline import config
-    from sprokit.pipeline import pipeline
+    from sprokit.pipeline import config  # NOQA
+    from sprokit.pipeline import pipeline  # NOQA
     from sprokit.pipeline import modules
     from sprokit.pipeline_util import bake
     from sprokit.pipeline_util import load
@@ -56,7 +56,7 @@ def test_simple_pipeline(path):
 
 def test_cluster_multiplier(path):
     from sprokit.pipeline import config
-    from sprokit.pipeline import pipeline
+    from sprokit.pipeline import pipeline  # NOQA
     from sprokit.pipeline import modules
     from sprokit.pipeline_util import bake
     from sprokit.pipeline_util import load
@@ -80,41 +80,41 @@ def test_cluster_multiplier(path):
     bake.register_cluster(info)
 
 
-if __name__ == '__main__':
-    import os
-    import sys
-
-    if not len(sys.argv) == 5:
-        raise ValueError("Error: Expected four arguments")
-        sys.exit(1)
-
-    testname = sys.argv[1]
-
-    os.chdir(sys.argv[2])
-
-    sys.path.append(sys.argv[3])
-
-    pipeline_dir = sys.argv[4]
-
-    path = os.path.join(pipeline_dir, '%s.pipe' % testname)
-
-    from sprokit.test.test import (find_tests, test_error, run_test)
-
-    run_test(testname, find_tests(locals()), path)
-
 # if __name__ == '__main__':
-#     r"""
-#     CommandLine:
-#         python -m sprokit.tests.test-scheduler_registry
-#     """
-#     import pytest
+#     import os
 #     import sys
-#     argv = list(sys.argv[1:])
-#     if len(argv) > 0 and argv[0] in vars():
-#         # If arg[0] is a function in this file put it in pytest format
-#         argv[0] = __file__ + '::' + argv[0]
-#         argv.append('-s')  # dont capture stdout for single tests
-#     else:
-#         # ensure args refer to this file
-#         argv.insert(0, __file__)
-#     pytest.main(argv)
+
+#     if not len(sys.argv) == 5:
+#         raise ValueError("Error: Expected four arguments")
+#         sys.exit(1)
+
+#     testname = sys.argv[1]
+
+#     os.chdir(sys.argv[2])
+
+#     sys.path.append(sys.argv[3])
+
+#     pipeline_dir = sys.argv[4]
+
+#     path = os.path.join(pipeline_dir, '%s.pipe' % testname)
+
+#     from sprokit.test.test import (find_tests, test_error, run_test)
+
+#     run_test(testname, find_tests(locals()), path)
+
+if __name__ == '__main__':
+    r"""
+    CommandLine:
+        python -m sprokit.tests.test-scheduler_registry
+    """
+    import pytest
+    import sys
+    argv = list(sys.argv[1:])
+    if len(argv) > 0 and argv[0] in vars():
+        # If arg[0] is a function in this file put it in pytest format
+        argv[0] = __file__ + '::' + argv[0]
+        argv.append('-s')  # dont capture stdout for single tests
+    else:
+        # ensure args refer to this file
+        argv.insert(0, __file__)
+    pytest.main(argv)

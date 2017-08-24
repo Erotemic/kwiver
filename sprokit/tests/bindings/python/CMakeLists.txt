@@ -31,7 +31,6 @@ endif ()
 
 ###
 #
-# """
 # Configures the python test file to the ctest bin directory
 # Also, configures the module to the sprokit/tests directory
 # (Ideally, the tests would be defined within the python module, as per the
@@ -48,7 +47,7 @@ endif ()
 #     ../../../cmake/conf/sprokit-macro-python.cmake
 #     ../../../cmake/conf/sprokit-macro-configure.cmake
 #     ../../../cmake/support/tests.cmake
-# """
+#
 function (sprokit_build_python_test group input)
 
   if (CMAKE_CONFIGURATION_TYPES)
@@ -79,10 +78,7 @@ endfunction ()
 
 
 ###
-#
-# """
 # Calls CMake `add_test` function under the hood
-# """
 function (sprokit_add_python_test group instance)
   set(python_module_path    "${sprokit_python_output_path}/${sprokit_python_subdir}")
   set(python_chdir          ".")
@@ -103,7 +99,6 @@ endfunction ()
 
 ###
 #
-# """
 # Searches test .py files for functions that begin with "test" and creates a
 # separate `ctest` for each. Ideally we would just map the output from
 # something like `py.test` to `ctest` instead.
@@ -115,7 +110,7 @@ endfunction ()
 # SeeAlso:
 #     kwiver/CMake/utils/kwiver-utils-python-tests.cmake - defines kwiver_discover_python_tests
 #     kwiver/sprokit/tests/bindings/python/sprokit/pipeline/CMakeLists.txt - uses this function
-# """
+#
 function (sprokit_discover_python_tests group file)
 
   file(STRINGS "${file}" test_lines)

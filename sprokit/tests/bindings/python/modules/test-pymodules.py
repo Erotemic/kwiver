@@ -44,7 +44,10 @@ __SINGLE_LOADER_TEST_GAURD__ = False
 def _unable_to_run_loader_test():
     global __SINGLE_LOADER_TEST_GAURD__
     if __SINGLE_LOADER_TEST_GAURD__:
-        pytest.skip('Unable run this test because another loader test ran')
+        pytest.skip(
+            'Unable run this test because another loader test ran. '
+            'Consider using pytest-xdist plugin with the --boxed option.'
+        )
         return True
     # Allow the first loader test to run
     __SINGLE_LOADER_TEST_GAURD__ = True
@@ -312,6 +315,14 @@ if __name__ == '__main__':
     CommandLine:
         # Note: running all tests together in this module will fail
         python -m sprokit.tests.test-pymodules
+
+        pip install pytest-xdist
+        python -m sprokit.tests.test-pymodules --boxed
+
+        # TODO: look into --boxed running
+        # https://stackoverflow.com/questions/11802316/nose2-vs-py-test-with-isolated-processes/11806997#11806997
+        # https://stackoverflow.com/questions/34644252/testing-incompatible-configurations-with-py-test
+        # https://github.com/pytest-dev/pytest-xdist#installation
     """
     argv = list(sys.argv[1:])
     if len(argv) > 0 and argv[0] in vars():

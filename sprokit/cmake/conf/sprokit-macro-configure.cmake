@@ -74,9 +74,8 @@ configure_file(
 endfunction ()
 
 
-# """
+###
 # Core configuration logic
-# """
 function (sprokit_configure_file_w_uid uid name source dest)
   set(configure_script
     "${CMAKE_CURRENT_BINARY_DIR}/configure.${name}.cmake")
@@ -111,7 +110,8 @@ function (sprokit_configure_file_w_uid uid name source dest)
 endfunction ()
 
 
-# """
+###
+#
 # Mimics a sprokit_configure_file_w_uid, but will symlink `source` to `dest`
 # directly without any configureation. This should only be used for dynamic
 # languages like python (which really shouldn't need any configure strings
@@ -123,7 +123,7 @@ endfunction ()
 #
 # SeeAlso:
 #     kwiver/CMake/utils/kwiver-utils-configuration.cmake
-# """
+#
 function (sprokit_symlink_file_w_uid uid name source dest)
 
   if(EXISTS ${dest} AND NOT IS_SYMLINK ${dest})
@@ -150,17 +150,15 @@ function (sprokit_symlink_file_w_uid uid name source dest)
 endfunction ()
 
 
-# """
+###
 # Simply calls sprokit_symlink_file_w_uid with the name being the uid
-# """
 function (sprokit_symlink_file name source dest)
   sprokit_symlink_file_w_uid(${name} ${name} "${source}" "${dest}" ${ARGN})
 endfunction ()
 
 
-# """
+###
 # Simply calls sprokit_configure_file_w_uid with the name being the uid
-# """
 function (sprokit_configure_file name source dest)
   sprokit_configure_file_w_uid(${name} ${name} "${source}" "${dest}" ${ARGN})
 endfunction ()

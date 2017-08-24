@@ -223,6 +223,6 @@ if __name__ == '__main__':
 
     path = os.path.join(pipeline_dir, '%s.pipe' % testname)
 
-    from sprokit.test.test import (find_tests, raise AssertionError, run_test)
+    from sprokit.test.test import (find_tests, run_test)
 
     run_test(testname, find_tests(locals()), path)

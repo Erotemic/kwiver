@@ -1,6 +1,5 @@
 ###
 #
-# """
 # Configures the python test file to the ctest bin directory
 #
 # Args:
@@ -11,7 +10,7 @@
 # SeeAlso:
 #     kwiver-utils-tests.cmake
 #     sprokit/tests/bindings/python/CMakeLists.txt - sprokit version of this func
-# """
+#
 function (kwiver_build_python_test group input)
   # seems unused
   #if (CMAKE_CONFIGURATION_TYPES)
@@ -36,10 +35,7 @@ endfunction ()
 
 
 ###
-#
-# """
-# Seems to call the CMAKE `add_test` function under the hood
-# """
+# Calls the CMAKE `add_test` function under the hood
 function (kwiver_add_python_test group instance)
   set(python_module_path    "${kwiver_python_output_path}")
 
@@ -74,7 +70,6 @@ endfunction ()
 
 ###
 #
-# """
 # Searches test .py files for functions that begin with "test" and creates a
 # separate `ctest` for each. Ideally we would just map the output from
 # something like `py.test` to `ctest` instead.
@@ -85,7 +80,7 @@ endfunction ()
 #
 # SeeAlso:
 #     sprokit/tests/bindings/python/CMakeLists.txt - defines sprokit_discover_python_tests
-# """
+#
 function (kwiver_discover_python_tests group file)
 
   set(properties)
