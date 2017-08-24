@@ -67,15 +67,7 @@ function (kwiver_add_python_test group instance)
   # do we need to worry about "noarch" stuff here?
   set(python_test_env "PYTHONPATH=${my_PYTHON_MODULE_PATH}/${site_dir}")
 
-  set(_node_suffix "${instance}")
-  # HACK: to put brakets back in
-  # FIXME: ctest still breaks even if this is specified. I guess
-  # we just have to run all paramatraziations as a single test.
-  string(REPLACE "-LBRAK-" "[" _node_suffix "${_node_suffix}")
-  string(REPLACE "-RBRAK-" "]" _node_suffix "${_node_suffix}")
-
-  set(pytest_node "${test_path}::${_node_suffix}")
-  #message(STATUS "_node_suffix = ${_node_suffix}")
+  set(pytest_node "${test_path}::${instance}")
 
   # Run the python test through py.test
   add_test(
