@@ -79,6 +79,11 @@ function (kwiver_build_test name libraries)
 endfunction ()
 
 # ------------------------------------------------------------------
+###
+#
+# SeeAlso:
+#     kwiver/sprokit/cmake/conf/sprokit-macro-tests.cmake
+#
 function (kwiver_add_test name instance)
   # TODO: Should this function replace sprokit_add_test
   # TODO: Should test_runner be passed in explicitly?

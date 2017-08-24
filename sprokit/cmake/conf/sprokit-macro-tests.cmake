@@ -48,6 +48,9 @@ endif ()
 ###
 # Declares a test grouping. Use this when a test is not built using
 # `sprokit_build_test`.
+#
+# This is almost the exact same function as kwiver_declare_test, can we use
+# that instead? the only difference is <PKG>_TEST_ADD_TARGETS.
 function (sprokit_declare_test name)
   if (NOT SPROKIT_TEST_ADD_TARGETS)
     return()
@@ -69,6 +72,9 @@ endfunction ()
 #    libraryvar :
 #    *ARGN : source files that will be built as a test
 #
+# This is almost the exact same function as kwiver_build_test, can we use
+# that instead? the only difference is <pkg>_test_output_path and
+# <pkg>_declare_test
 function (sprokit_build_test name libraries)
   add_executable(test-${name} ${ARGN})
   set_target_properties(test-${name}
@@ -90,6 +96,9 @@ endfunction ()
 #     name :
 #     instance :
 #     *ARGN : additional command line args to be passed to the test
+#
+# SeeAlso:
+#     kwiver/CMake/utils/kwiver-utils-tests.cmake
 #
 function (sprokit_add_test name instance)
   # TODO: Should this function be replaed by kwiver_add_test?

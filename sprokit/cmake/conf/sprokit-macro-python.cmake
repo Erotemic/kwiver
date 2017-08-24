@@ -229,7 +229,6 @@ function (sprokit_add_python_resource    fname     modpath)
   set(out_fpath "${sprokit_python_output_path}/${sprokit_python_subdir}${python_noarchdir}${python_sitepath}/${modpath}/${fname}")
   set(pypkg_install_dpath "${python_install_path}/${sprokit_python_subdir}${python_sitepath}/${modpath}")
 
-  message(STATUS "!!!! ARGN = ${ARGN}")
   sprokit_configure_file_w_uid("${configure_id}"
     "${resource_id}"
     "${in_fpath}"

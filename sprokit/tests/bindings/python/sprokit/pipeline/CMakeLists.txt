@@ -64,17 +64,21 @@ set(_instances
 
 set(group run)
 
-sprokit_build_python_test(${group} test-${group}.py)
+sprokit_build_python_test(${group}.py test-${group}.py)
 
+# It seems cmake/ctest has serious issues with square brakets
+# workaround is to just run all paramatarizations in a single ctest
 foreach (instance IN LISTS _instances)
-  foreach (scheduler IN LISTS _valid_schedulers)
-    #sprokit_add_python_test(${group} ${instance}-${scheduler})
+  sprokit_add_python_test(${group}.py "test_${instance}")
+endforeach()
 
-    #set(pytest_node_suffix "${instance}[${scheduler}]")
-    #sprokit_add_python_test(${group} "${pytest_node_suffix}")
-    #set_tests_properties(test-python-${group}-${pytest_node_suffix}
-    #  PROPERTIES
-    #    TIMEOUT 5)
 
-  endforeach ()
-endforeach ()
+#foreach (instance IN LISTS _instances)
+#  foreach (scheduler IN LISTS _valid_schedulers)
+#    set(pytest_node_suffix "${instance}-LBRAK-${scheduler}-RBRAK-")
+#    sprokit_add_python_test(${group} "${pytest_node_suffix}")
+#    set_tests_properties(test-python-${group}-${pytest_node_suffix}
+#      PROPERTIES
+#        TIMEOUT 5)
+#  endforeach ()
+#endforeach ()

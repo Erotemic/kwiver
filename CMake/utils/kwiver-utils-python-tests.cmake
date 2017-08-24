@@ -22,8 +22,6 @@ function (kwiver_build_python_test group input)
   set(source "${CMAKE_CURRENT_SOURCE_DIR}/${input}")
   set(dest "${kwiver_test_output_path}/\${config}test-python-${group}")
 
-  message(STATUS "dest = ${dest}")
-
   if (KWIVER_SYMLINK_PYTHON)
       kwiver_symlink_file(${name} ${source} ${dest} PYTHON_EXECUTABLE)
   else()
@@ -35,11 +33,23 @@ endfunction ()
 
 
 ###
-# Calls the CMAKE `add_test` function under the hood
+#
+# Calls add_test similar to kwiver_add_test, but formats arguments such that
+# py.test can be used
 function (kwiver_add_python_test group instance)
-  set(python_module_path    "${kwiver_python_output_path}")
 
   _kwiver_python_site_package_dir( site_dir )
+
+  set(oneValueArgs TEST_OUTPUT_PATH PYTHON_MODULE_PATH)
+  cmake_parse_arguments(my "" "${oneValueArgs}" "" ${ARGN} )
+  # keyword argument defaults
+  if (NOT my_TEST_OUTPUT_PATH)
+    set(my_TEST_OUTPUT_PATH "${kwiver_test_output_path}")
+  endif()
+  if (NOT my_PYTHON_MODULE_PATH)
+    set(my_PYTHON_MODULE_PATH "${kwiver_python_output_path}")
+  endif()
+
 
   # Dont call kwiver_add_test because we need to set `kwiver_test_runner`
   # globally, which may still be expected to be empty. It would be nice if this
@@ -48,18 +58,29 @@ function (kwiver_add_python_test group instance)
   # only if those extra options are actually necessary for python.
 
   #kwiver_add_test(python-${group} ${instance}
-  #  "${python_chdir}" "${python_module_path}/${site_dir}" ${ARGN})
+  #  "${python_chdir}" "${my_PYTHON_MODULE_PATH}/${site_dir}" ${ARGN})
 
   set(name python-${group})
   set(test_name test-${name}-${instance})
-  set(test_path "${kwiver_test_output_path}/test-${name}")
+  set(test_path "${my_TEST_OUTPUT_PATH}/test-${name}")
 
   # do we need to worry about "noarch" stuff here?
-  set(python_test_env "PYTHONPATH=${python_module_path}/${site_dir}")
+  set(python_test_env "PYTHONPATH=${my_PYTHON_MODULE_PATH}/${site_dir}")
+
+  set(_node_suffix "${instance}")
+  # HACK: to put brakets back in
+  # FIXME: ctest still breaks even if this is specified. I guess
+  # we just have to run all paramatraziations as a single test.
+  string(REPLACE "-LBRAK-" "[" _node_suffix "${_node_suffix}")
+  string(REPLACE "-RBRAK-" "]" _node_suffix "${_node_suffix}")
+
+  set(pytest_node "${test_path}::${_node_suffix}")
+  #message(STATUS "_node_suffix = ${_node_suffix}")
+
   # Run the python test through py.test
   add_test(
     NAME    ${test_name}
-    COMMAND "${PYTHON_EXECUTABLE}" -m pytest "${test_path}::${instance}" ${ARGN}
+    COMMAND "${PYTHON_EXECUTABLE}" -m pytest "${pytest_node}" ${my_ARGN}
     )
   set_tests_properties(${test_name}
     PROPERTIES
@@ -110,7 +131,7 @@ function (parse_python_testables py_fpath outvar)
     endif()
   endforeach()
 
-  set(${outvar} output_list)
+  set(${outvar} ${output_list} PARENT_SCOPE)
 endfunction()
 
 

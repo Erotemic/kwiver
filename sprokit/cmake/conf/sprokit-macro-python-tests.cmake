@@ -37,10 +37,10 @@ endif ()
 #     input: filename of the test .py file (includes the extension)
 #
 # SeeAlso:
-#     ../../../cmake/conf/sprokit-macro-tests.cmake
-#     ../../../cmake/conf/sprokit-macro-python.cmake
-#     ../../../cmake/conf/sprokit-macro-configure.cmake
-#     ../../../cmake/support/tests.cmake
+#     sprokit-macro-tests.cmake
+#     sprokit-macro-python.cmake
+#     sprokit-macro-configure.cmake
+#     ../support/test.cmake
 #
 function (sprokit_build_python_test group input)
 
@@ -58,7 +58,10 @@ function (sprokit_build_python_test group input)
   else()
       sprokit_configure_file(${name} ${source} ${dest} PYTHON_EXECUTABLE)
   endif()
-  sprokit_declare_tooled_test(python-${group})
+
+  # TODO: make tooled python tests work again
+  #sprokit_declare_tooled_test(python-${group})
+  sprokit_declare_test(python-${group})
 
 endfunction ()
 
@@ -66,10 +69,9 @@ endfunction ()
 ###
 # Calls CMake `add_test` function under the hood
 function (sprokit_add_python_test group instance)
-  message(STATUS "ADD SPROKIT PY-TEST")
-  message(STATUS " group = ${group}")
-  message(STATUS " instance = ${instance}")
-
+  #message(STATUS "ADD PYTHON SPROK TEST instance = ${instance}")
+  #message(STATUS "instance = ${instance}")
+  #message(STATUS "group = ${group}")
   set(python_module_path    "${sprokit_python_output_path}/${sprokit_python_subdir}")
   set(python_chdir          ".")
 
@@ -81,9 +83,21 @@ function (sprokit_add_python_test group instance)
   # Note: `sprokit_test_runner` is set to the python executable which is
   # implicitly passed down to sprokit_add_tooled_test.
 
-  _kwiver_python_site_package_dir( site_dir )
-  sprokit_add_tooled_test(python-${group} ${instance}
-    "${python_chdir}" "${python_module_path}/${site_dir}" ${ARGN})
+
+  # NOTE: we are simply re-using the kwiver version of this func instead of
+  # redefining it for sprokit. It respects the same vars (as long as we pass
+  # test output path), so we should be fine.
+  # This runs our test with py.test
+  kwiver_add_python_test(${group} ${instance}
+    TEST_OUTPUT_PATH ${sprokit_test_output_path}
+    PYTHON_MODULE_PATH ${python_module_path}
+    )
+
+  # TODO: make tooled python tests work again
+  #_kwiver_python_site_package_dir( site_dir )
+  # calls sprokit_add_test(${test} ${instance} ${ARGN})
+  #sprokit_add_tooled_test(python-${group} ${instance}
+    #"${python_chdir}" "${python_module_path}/${site_dir}" ${ARGN})
 endfunction ()
 
 
@@ -102,10 +116,6 @@ endfunction ()
 #     kwiver/sprokit/tests/bindings/python/sprokit/pipeline/CMakeLists.txt - uses this function
 #
 function (sprokit_discover_python_tests group file)
-  message(STATUS "DISCOVER SPROKIT PY-TESTS")
-  message(STATUS " group = ${group}")
-  message(STATUS " file = ${file}")
-
   set(properties)
 
   set(group "${group}.py")
@@ -116,43 +126,9 @@ function (sprokit_discover_python_tests group file)
   # Define a python test for each testable function / method
   set(py_fpath "${CMAKE_CURRENT_SOURCE_DIR}/${file}")
   parse_python_testables("${py_fpath}" _testables)
+
   foreach (test_name IN LISTS _testables)
     sprokit_add_python_test("${group}" "${test_name}" ${ARGN})
   endforeach()
 
-  #file(STRINGS "${file}" test_lines)
-  #foreach (test_line IN LISTS test_lines)
-  #  set(test_name)
-  #  set(property)
-  #  # Find python functions that start with test.
-  #  # perhaps use AST parsing in the future?
-  #  string(REGEX MATCH "^def test_([A-Za-z_]+)\\(.*\\):$"
-  #    match "${test_line}")
-  #  if (match)
-  #    set(test_name "${CMAKE_MATCH_1}")
-  #    sprokit_add_python_test("${group}" "${test_name}"
-  #      ${ARGN})
-  #    if (properties)
-  #      set_tests_properties("test-python-${group}-${test_name}"
-  #        PROPERTIES
-  #          ${properties})
-  #    endif ()
-  #    set(properties)
-  #  endif ()
-  #  string(REGEX MATCHALL "^# TEST_PROPERTY\\(([A-Za-z_]+), (.*)\\)$"
-  #    match "${test_line}")
-  #  if (match)
-  #    set(prop "${CMAKE_MATCH_1}")
-  #    string(CONFIGURE "${CMAKE_MATCH_2}" prop_value
-  #      @ONLY)
-  #    if (prop STREQUAL "ENVIRONMENT")
-  #      set(sprokit_test_environment
-  #        "${prop_value}")
-  #    else ()
-  #      set(property "${prop}" "${prop_value}")
-  #      list(APPEND properties
-  #        "${property}")
-  #    endif ()
-  #  endif ()
-  #endforeach ()
 endfunction ()

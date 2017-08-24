@@ -36,7 +36,7 @@ def test_import():
         raise AssertionError("Failed to import the bake module")
 
 
-def test_simple_pipeline(path):
+def test_simple_pipeline():
     from sprokit.test import test
     path = test.grab_test_pipeline_file('simple_pipeline.pipe')
 

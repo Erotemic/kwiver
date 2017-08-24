@@ -378,6 +378,9 @@ def test_python_via_cpp(sched_type):
 if __name__ == '__main__':
     r"""
     CommandLine:
+        pytest --pyargs sprokit.tests
+        pytest --pyargs sprokit.tests.test-run
+
         python -m sprokit.tests.test-run
         python -m sprokit.tests.test-run test_python_to_python --collect-only
         python -m sprokit.tests.test-run test_python_to_python[sync] --collect-only
