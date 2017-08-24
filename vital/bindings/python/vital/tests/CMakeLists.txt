@@ -36,7 +36,6 @@ set(__all_modnames
 
 # Add files to the vital.tests python module
 foreach (modname IN LISTS __all_modnames)
-  message(STATUS "modname = ${modname}")
   kwiver_add_python_module( ${CMAKE_CURRENT_SOURCE_DIR}/${modname}.py
     vital/tests
     ${modname})
@@ -45,14 +44,10 @@ endforeach()
 
 if (KWIVER_ENABLE_TESTS)
   include(kwiver-test-setup)
-  message(STATUS "kwiver_test_output_path = ${kwiver_test_output_path}")
   # Register individual tests with ctest
   foreach (modname IN LISTS __testable_modnames)
-    message(STATUS "modname = ${modname}")
-    # Find each testable function within the module
     kwiver_discover_python_tests(${modname} ${modname}.py)
   endforeach()
-  #message(FATAL_ERROR "TEST DONE")
 endif()
 
 

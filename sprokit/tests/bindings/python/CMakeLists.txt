@@ -2,7 +2,7 @@ project(sprokit_test_python)
 
 
 # Include the python helper functions previously defined here
-include("${sprokit_source_dir}/cmake/conf/sprokit-macro-python.cmake")
+include("${sprokit_source_dir}/cmake/conf/sprokit-macro-python-tests.cmake")
 
 
 add_subdirectory(test)

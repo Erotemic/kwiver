@@ -27,13 +27,11 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-"""
-This module can likely be depricated
-"""
 
 try:
     from sprokit.test import test
 except ImportError:
+    print('Could not load sprokit test helper module')
     pass
 
 
@@ -79,6 +77,7 @@ def test_expected_exception():
 
 
 def test_unexpected_exception():
+    # TODO: can likely use pytest instead
     try:
         test.expect_exception('when throwing an unexpected exception', SyntaxError,
                               raise_exception)

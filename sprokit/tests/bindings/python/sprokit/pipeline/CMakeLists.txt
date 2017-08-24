@@ -1,6 +1,7 @@
 project(sprokit_test_python_sprokit_pipeline)
 
-set(__testable_modnames
+# Simple testables require no pytest paramatarization
+set(__simple_testable_modnames
   config
   datum
   edge
@@ -16,49 +17,64 @@ set(__testable_modnames
   version
   )
 
-# Add files to the vital.tests python module
-foreach (modname IN LISTS __all_modnames)
-  message(STATUS "modname = ${modname}")
-  kwiver_add_python_module( ${CMAKE_CURRENT_SOURCE_DIR}/${modname}.py
-    vital/tests
-    ${modname})
+set(__all_modnames
+  run
+  ${__simple_testable_modnames}
+  )
+
+# Add files to sprokit.tests module to mimic a standard python source tree
+foreach (group IN LISTS __all_modnames)
+  sprokit_add_python_module( ${CMAKE_CURRENT_SOURCE_DIR}/test-${group}.py
+    sprokit/tests
+    test-${group})
 endforeach()
 
 
+###
+# Setup simple tests with no parameters
+
+# KWIVER_ENABLE_TESTS is always true for now (because we are in the test
+# subdir), but the python tests should be moved to the python source dir.
 if (KWIVER_ENABLE_TESTS)
-  # SeeAlso:
-  #     # defines sprokit_discover_python_tests
-  #     sprokit/cmake/conf/sprokit-macro-python-tests.cmake
-  sprokit_discover_python_tests(config test-config.py)
+  #include(kwiver-test-setup)
+  # Register individual tests with ctest
+  foreach (group IN LISTS __simple_testable_modnames)
+    # SeeAlso:
+    #     # defines sprokit_discover_python_tests
+    #     sprokit/cmake/conf/sprokit-macro-python-tests.cmake
+    sprokit_discover_python_tests(${group} test-${group}.py)
+  endforeach()
 endif()
 
-##############################
-# Config tests
-##############################
-sprokit_discover_python_tests(config test-config.py)
 
+###
+# Setup tests that need py.test paramatarization
 
-##############################
-# Run tests
-##############################
-sprokit_build_python_test(run test-run.py)
-
-set(schedulers
+set(_valid_schedulers
   pythread_per_process
   sync
   thread_per_process)
 
-function (sprokit_add_python_run_test group instance)
-  foreach (scheduler IN LISTS schedulers)
-    sprokit_add_python_test(${group} ${instance}-${scheduler})
+set(_instances
+  python_to_python
+  cpp_to_python
+  python_to_cpp
+  python_via_cpp
+)
 
-    set_tests_properties(test-python-${group}-${instance}-${scheduler}
-      PROPERTIES
-        TIMEOUT 5)
+set(group run)
+
+sprokit_build_python_test(${group} test-${group}.py)
+
+foreach (instance IN LISTS _instances)
+  foreach (scheduler IN LISTS _valid_schedulers)
+    #sprokit_add_python_test(${group} ${instance}-${scheduler})
+
+    #set(pytest_node_suffix "${instance}[${scheduler}]")
+    #sprokit_add_python_test(${group} "${pytest_node_suffix}")
+    #set_tests_properties(test-python-${group}-${pytest_node_suffix}
+    #  PROPERTIES
+    #    TIMEOUT 5)
+
   endforeach ()
-endfunction ()
-
-sprokit_add_python_run_test(run python_to_python)
-sprokit_add_python_run_test(run cpp_to_python)
-sprokit_add_python_run_test(run python_to_cpp)
-sprokit_add_python_run_test(run python_via_cpp)
+endforeach ()
