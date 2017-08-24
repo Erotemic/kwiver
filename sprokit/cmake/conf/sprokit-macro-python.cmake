@@ -108,7 +108,7 @@ endfunction ()
 #
 # SeeAlso:
 #     kwiver/CMake/utils/kwiver-utils-python.cmake
-#     sprokit/tests/bindings/python/CMakeLists.txt
+#     sprokit/cmake/conf/sprokit-macro-python-tests.cmake
 #
 function (sprokit_add_python_module    path     modpath    module)
   _sprokit_create_safe_modpath("${modpath}" safe_modpath)

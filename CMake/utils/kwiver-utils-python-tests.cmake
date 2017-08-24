@@ -9,7 +9,7 @@
 #
 # SeeAlso:
 #     kwiver-utils-tests.cmake
-#     sprokit/tests/bindings/python/CMakeLists.txt - sprokit version of this func
+#     sprokit/cmake/conf/sprokit-macro-python-tests.cmake
 #
 function (kwiver_build_python_test group input)
   # seems unused
@@ -79,7 +79,7 @@ endfunction ()
 #     file: filename of the test .py file (includes the extension)
 #
 # SeeAlso:
-#     sprokit/tests/bindings/python/CMakeLists.txt - defines sprokit_discover_python_tests
+#     sprokit/cmake/conf/sprokit-macro-python-tests.cmake
 #
 function (kwiver_discover_python_tests group file)
 

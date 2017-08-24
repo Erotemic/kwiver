@@ -1,69 +1,42 @@
 project(sprokit_test_python_sprokit_pipeline)
 
+set(__testable_modnames
+  config
+  datum
+  edge
+  modules
+  pipeline
+  process
+  process_cluster
+  process_registry
+  scheduler
+  scheduler_registry
+  stamp
+  utils
+  version
+  )
+
+# Add files to the vital.tests python module
+foreach (modname IN LISTS __all_modnames)
+  message(STATUS "modname = ${modname}")
+  kwiver_add_python_module( ${CMAKE_CURRENT_SOURCE_DIR}/${modname}.py
+    vital/tests
+    ${modname})
+endforeach()
+
+
+if (KWIVER_ENABLE_TESTS)
+  # SeeAlso:
+  #     # defines sprokit_discover_python_tests
+  #     sprokit/cmake/conf/sprokit-macro-python-tests.cmake
+  sprokit_discover_python_tests(config test-config.py)
+endif()
+
 ##############################
 # Config tests
 ##############################
 sprokit_discover_python_tests(config test-config.py)
 
-##############################
-# Datum tests
-##############################
-sprokit_discover_python_tests(datum test-datum.py)
-
-##############################
-# Edge tests
-##############################
-sprokit_discover_python_tests(edge test-edge.py)
-
-##############################
-# Modules tests
-##############################
-sprokit_discover_python_tests(modules test-modules.py)
-
-##############################
-# Pipeline tests
-##############################
-sprokit_discover_python_tests(pipeline test-pipeline.py)
-
-##############################
-# Process tests
-##############################
-sprokit_discover_python_tests(process test-process.py)
-
-##############################
-# Process cluster tests
-##############################
-sprokit_discover_python_tests(process_cluster test-process_cluster.py)
-
-##############################
-# Process registry tests
-##############################
-sprokit_discover_python_tests(process_registry test-process_registry.py)
-
-##############################
-# Scheduler tests
-##############################
-sprokit_discover_python_tests(scheduler test-scheduler.py)
-
-##############################
-# Scheduler registry tests
-##############################
-sprokit_discover_python_tests(scheduler_registry test-scheduler_registry.py)
-
-##############################
-# Stamp tests
-##############################
-sprokit_discover_python_tests(stamp test-stamp.py)
-
-##############################
-# Utils tests
-##############################
-sprokit_discover_python_tests(utils test-utils.py)
-
-##############################
-# Version tests
-##############################
-sprokit_discover_python_tests(version test-version.py)
 
 ##############################
 # Run tests
