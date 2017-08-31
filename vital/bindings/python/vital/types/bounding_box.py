@@ -46,6 +46,10 @@ class BoundingBox (VitalObject, NiceRepr):
     """
     vital::detected_object_ interface class
 
+    SeeAlso:
+        vital/bindings/c/types/bounding_box.h
+        vital/types/bounding_box.h
+
     Example:
         >>> from vital.types import BoundingBox
         >>> self = BoundingBox(0, 1, 10, 12)
