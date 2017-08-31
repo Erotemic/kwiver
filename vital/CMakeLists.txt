@@ -114,6 +114,7 @@ set( vital_public_headers
   io/track_set_io.h
 
   types/bounding_box.h
+  types/oriented_bounding_box.h
   types/camera.h
   types/camera_intrinsics.h
   types/camera_map.h
@@ -186,6 +187,7 @@ set( vital_sources
   io/track_set_io.cxx
 
   types/bounding_box.cxx
+  types/oriented_bounding_box.cxx
   types/camera.cxx
   types/camera_intrinsics.cxx
   types/descriptor_request.cxx
