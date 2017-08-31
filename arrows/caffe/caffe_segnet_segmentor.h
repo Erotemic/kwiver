@@ -28,40 +28,40 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef KWIVER_ARROWS_SEGNET_SEGMENTATION
-#define KWIVER_ARROWS_SEGNET_SEGMENTATION
+#ifndef KWIVER_ARROWS_CAFFE_SEGNET_SEGMENTOR
+#define KWIVER_ARROWS_CAFFE_SEGNET_SEGMENTATION
 
-#include <arrows/segnet/kwiver_algo_segnet_export.h>
+#include <arrows/caffe/kwiver_algo_caffe_export.h>
 
 #include <vital/vital_config.h>
 
-#include <vital/algo/compute_segmentation.h>
+#include <vital/algo/image_segmentor.h>
 
 namespace kwiver {
 namespace arrows {
-namespace segnet {
+namespace caffe  {
 
 // ----------------------------------------------------------------
 /**
- * @brief segnet_segmentation
+ * @brief caffe_segnet_segmentation
  *
  */
-class KWIVER_ALGO_SEGNET_EXPORT segnet_segmentation
-  : public vital::algorithm_impl< segnet_segmentation,
-      vital::algo::compute_segmentation >  // TODO Does this exist?
+class KWIVER_ALGO_CAFFE_EXPORT caffe_segnet_segmentor
+  : public vital::algorithm_impl< caffe_segnet_segmentor,
+      vital::algo::image_segmentor >
 {
 public:
 
-  segnet_segmentation();
-  virtual ~segnet_segmentation();
+  caffe_segnet_segmentor();
+  virtual ~caffe_segnet_segmentor();
 
   virtual vital::config_block_sptr get_configuration() const;
 
   virtual void set_configuration( vital::config_block_sptr config );
   virtual bool check_configuration( vital::config_block_sptr config ) const;
 
-  virtual kwiver::vital::image_container_sptr
-  compute( kwiver::vital::image_container_sptr image_data );
+  virtual vital::image_container_sptr
+    segment( vital::image_container_sptr image_data) const;
 
 private:
 
@@ -71,4 +71,4 @@ private:
 
 } } }
 
-#endif /* KWIVER_ARROWS_SEGNET_DETECTOR */
+#endif /* KWIVER_ARROWS_CAFFE_SEGNET_SEGMENTOR */

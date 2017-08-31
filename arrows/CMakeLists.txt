@@ -13,6 +13,16 @@ if( KWIVER_ENABLE_CERES )
   add_subdirectory( ceres )
 endif()
 
+# Add Caffe plugin if enabled
+if( KWIVER_ENABLE_CAFFE )
+  add_subdirectory( caffe )
+endif()
+
+# Add Ceres plugin if enabled
+if( KWIVER_ENABLE_SEGNET )
+  add_subdirectory(caffe)
+endif()
+
 # Add OpenCV plugin if enabled
 if( KWIVER_ENABLE_OPENCV )
   add_subdirectory( ocv )

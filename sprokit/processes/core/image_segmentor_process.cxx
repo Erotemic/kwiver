@@ -101,9 +101,9 @@ _step()
   vital::image_container_sptr input = grab_from_port_using_trait( image );
 
   // Get segmentions from segmentor on image
-  vital::segmentation_image_sptr result = d->m_segmentor->segment( input );
+  vital::image_container_sptr output = d->m_segmentor->segment( input );
 
-  push_to_port_using_trait( segmentation_image, result );
+  push_to_port_using_trait( image, output );
 }
 
 
@@ -119,10 +119,10 @@ make_ports()
   required.insert( flag_required );
 
   // -- input --
-  declare_input_port_using_trait( image, required );
+  declare_input_port_using_trait(image, required );
 
   // -- output --
-  declare_output_port_using_trait( segmentation_image, optional );
+  declare_output_port_using_trait(image, required );
 }
 
 

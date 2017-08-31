@@ -28,30 +28,30 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <arrows/segnet/kwiver_algo_segnet_plugin_export.h>
+#include <arrows/caffe/kwiver_algo_caffe_plugin_export.h>
 #include <vital/algo/algorithm_factory.h>
 
-#include <arrows/segnet/segnet_segmentation.h>
+#include <arrows/caffe/caffe_segnet_segmentor.h>
 
 namespace kwiver {
 namespace arrows {
-namespace segnet {
+namespace caffe  {
 
 extern "C"
-KWIVER_ALGO_SEGNET_PLUGIN_EXPORT
+KWIVER_ALGO_CAFFE_PLUGIN_EXPORT
 void
 register_factories( kwiver::vital::plugin_loader& vpm )
 {
-  static auto const module_name = std::string( "arrows.segnet" );
+  static auto const module_name = std::string( "arrows.caffe" );
   if( vpm.is_module_loaded( module_name ) )
   {
     return;
   }
 
   // add factory               implementation-name       type-to-create
-  auto fact = vpm.ADD_ALGORITHM( "segnet", kwiver::arrows::segnet::segnet_segmentation );
+  auto fact = vpm.ADD_ALGORITHM( "caffe", kwiver::arrows::caffe::caffe_segnet_segmentor );
   fact->add_attribute( kwiver::vital::plugin_factory::PLUGIN_DESCRIPTION,
-                    "Track descriptors using segnet" )
+                    "Track descriptors using caffe" )
     .add_attribute( kwiver::vital::plugin_factory::PLUGIN_MODULE_NAME, module_name )
     .add_attribute( kwiver::vital::plugin_factory::PLUGIN_VERSION, "1.0" )
     .add_attribute( kwiver::vital::plugin_factory::PLUGIN_ORGANIZATION, "Kitware Inc." )

@@ -19,6 +19,7 @@ endif()
 
 # Optional for Arrows
 if(KWIVER_ENABLE_ARROWS)
+include( kwiver-depends-Caffe )
 include( kwiver-depends-CUDA )
 include( kwiver-depends-OpenCV )
 include( kwiver-depends-PROJ )

@@ -28,23 +28,24 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "segnet_segmentation.h"
+#include "caffe_segnet_segmentor.h"
 
 #include <string>
 #include <sstream>
 #include <exception>
 
+#include <kwiversys/SystemTools.hxx>
+
 
 namespace kwiver {
 namespace arrows {
-namespace segnet {
+namespace caffe  {
 
 // ==================================================================
-class segnet_segmentation::priv
+class caffe_segnet_segmentor::priv
 {
 public:
   priv()
-    : m_config( "" )
   {}
 
   ~priv()
@@ -52,36 +53,35 @@ public:
   }
 
   // Items from the config
-  std::string m_config;
+  std::string m_weight_file;
 
   kwiver::vital::logger_handle_t m_logger;
 };
 
 
 // ==================================================================
-segnet_segmentation::
-segnet_segmentation()
+caffe_segnet_segmentor::
+caffe_segnet_segmentor()
   : d( new priv() )
 {
 
 }
 
 
-segnet_segmentation::
-~segnet_segmentation()
+caffe_segnet_segmentor::
+~caffe_segnet_segmentor()
 {}
 
 
 // --------------------------------------------------------------------
 vital::config_block_sptr
-segnet_segmentation::
+caffe_segnet_segmentor::
 get_configuration() const
 {
   // Get base config from base class
   vital::config_block_sptr config = vital::algorithm::get_configuration();
 
-  config->set_value( "config", d->m_config,
-    "Name of config file." );
+  config->set_value( "weight_file", d->m_weight_file, "Name of optional weight file." );
 
   return config;
 }
@@ -89,41 +89,56 @@ get_configuration() const
 
 // --------------------------------------------------------------------
 void
-segnet_segmentation::
+caffe_segnet_segmentor::
 set_configuration( vital::config_block_sptr config_in )
 {
-  // TODO: What configs do we need?
   vital::config_block_sptr config = this->get_configuration();
 
   config->merge_config( config_in );
 
-  this->d->m_config = config->get_value< std::string >( "config" );
+  this->d->m_weight_file = config->get_value< std::string >( "weight_file" );
+  if(!d->m_weight_file.empty() )
+  {
+    //load_weights( &d->m_net, const_cast< char* >( d->m_weight_file.c_str() ) );
+  }
 }
 
 
 // --------------------------------------------------------------------
 bool
-segnet_segmentation::
+caffe_segnet_segmentor::
 check_configuration( vital::config_block_sptr config ) const
 {
-  std::string config_fn = config->get_value< std::string >( "config" );
+  bool success( true );
 
-  if( config_fn.empty() )
+  std::string weight_file = config->get_value< std::string >( "weight_file" );
+  if( weight_file.empty() )
   {
-    return false;
+    std::stringstream str;
+    config->print( str );
+    LOG_ERROR( logger(), "Required weight file not specified. "
+      "Configuration is as follows:\n" << str.str() );
+    success = false;
+  }
+  else if( ! kwiversys::SystemTools::FileExists( weight_file ) )
+  {
+    LOG_ERROR( logger(), "weight file \"" << weight_file << "\" not found." );
+    success = false;
   }
 
-  return true;
+  return success;
 }
 
 
 // --------------------------------------------------------------------
-kwiver::vital::image_container_sptr  // TODO Is this the right output type?
-segnet_segmentation::
-compute( kwiver::vital::image_container_sptr image_data)
+vital::image_container_sptr
+caffe_segnet_segmentor::
+segment( vital::image_container_sptr image_data) const
 {
 
-  return kwiver::vital::image_container_sptr();
+  // vital::image_container_sptr output = image_data->();
+
+  return image_data;
 }
 
 

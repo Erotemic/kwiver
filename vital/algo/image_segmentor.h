@@ -66,7 +66,7 @@ public:
    * \param image_data the image pixels
    * \returns segmentation_image_sptr
    */
-  virtual segmentation_image_sptr
+  virtual image_container_sptr
       segment( image_container_sptr image_data) const = 0;
 
 protected:

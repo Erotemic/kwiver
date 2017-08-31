@@ -55,6 +55,7 @@
 #include "track_descriptor_input_process.h"
 #include "track_descriptor_output_process.h"
 #include "video_input_process.h"
+#include "image_segmentor_process.h"
 
 // ----------------------------------------------------------------
 /*! \brief Regsiter processes
@@ -141,6 +142,13 @@ register_factories( kwiver::vital::plugin_loader& vpm )
   fact->add_attribute( kwiver::vital::plugin_factory::PLUGIN_MODULE_NAME, module_name );
   fact->add_attribute( kwiver::vital::plugin_factory::PLUGIN_DESCRIPTION,
                        "Apply selected image object detector algorithm to incoming images." );
+  fact->add_attribute( kwiver::vital::plugin_factory::PLUGIN_VERSION, "1.0" );
+
+  fact = vpm.ADD_PROCESS( kwiver::image_segmentor_process );
+  fact->add_attribute( kwiver::vital::plugin_factory::PLUGIN_NAME, "image_segmentor" );
+  fact->add_attribute( kwiver::vital::plugin_factory::PLUGIN_MODULE_NAME, module_name );
+  fact->add_attribute( kwiver::vital::plugin_factory::PLUGIN_DESCRIPTION,
+                       "Apply selected segmentation algorithm to incoming images." );
   fact->add_attribute( kwiver::vital::plugin_factory::PLUGIN_VERSION, "1.0" );
 
   fact = vpm.ADD_PROCESS( kwiver::image_filter_process );
