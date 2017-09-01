@@ -1,8 +1,22 @@
+"""
+Notes:
+    C++ uses a left-recursive (non-context free) grammer, so we are not going
+    to be able to parse it easilly. The goal of this is to implement some
+    hueristics to parse C++ code on a file-by-file basis. Its purpose is to
+    autogenerate a template that can then be modified as desired.
+
+
+References:
+    # C++ BNF Grammar
+    http://www.nongnu.org/hcb/
+
+"""
 from os.path import expanduser, join
 import re
 import utool as ut
 import ubelt as ub
 import datetime
+import copy
 
 
 VARNAME = '[A-Za-z_][A-Za-z0-9_]*'
@@ -70,13 +84,36 @@ def regex_or(list_):
     return '(' + '|'.join(list_) + ')'
 
 
+CV_QUALIFIER = regex_or(['const', 'volatile'])
+
+
+class TypeRegistry(object):
+    mappings = {
+        'vector_t': 'double *',
+    }
+
+
 @ut.reloadable_class
 class CArg(ub.NiceRepr):
+    """
+    Example:
+        >>> import sys
+        >>> sys.path.append('/home/joncrall/code/VIAME/packages/kwiver/vital/bindings/python/vital/types')
+        >>> from c_introspect import *
+        >>> print(CArg.parse('double **foo'))
+        >>> print(CArg.parse('char* const& ptr'))
+        >>> print(CArg.parse('const int &p'))
+        >>> print(CArg.parse('void'))
+
+    """
     def __init__(carg, type, name=None, default=None, orig_text=None):
         carg.type = type
         carg.name = name
         carg.default = default
         carg._orig_text = orig_text
+
+    def copy(self):
+        return copy.deepcopy(self)
 
     @classmethod
     def parse(CArg, text):
@@ -138,12 +175,9 @@ class CArg(ub.NiceRepr):
         """
         The C type that corresponds to this C++ type
         """
-        known_mappings = {
-            'vector_t': 'double *',
-        }
         type = carg.strip_const()
-        if type in known_mappings:
-            return known_mappings[type]
+        if type in TypeRegistry.mappings:
+            return TypeRegistry.mappings[type]
         else:
             return carg.type.strip()
 
@@ -155,7 +189,7 @@ class CArg(ub.NiceRepr):
 
     def vital_classname(carg):
         base = carg.basetype()
-        match = re.match('vital_' + named('vt', VARNAME) + '_t' + '\s*' + named('is_const', 'const') + '?', base)
+        match = re.match('vital_' + named('vt', VARNAME) + '_t' + '\s*' + optional(CV_QUALIFIER), base)
         if match:
             return match.groupdict()['vt']
         return None
@@ -227,6 +261,15 @@ class CArgspec(ub.NiceRepr):
     argspec = d['argspec']
     cargs = CArgspec(argspec)
     cargs.args
+
+    http://www.nongnu.org/hcb/#dcl.decl
+
+    http://www.nongnu.org/hcb/#parameter-declaration
+
+    parameters-and-qualifiers:
+        ( parameter-declaration-clause ) attribute-specifier-seqopt \
+                cv-qualifier-seqopt ref-qualifieropt \
+                exception-specificationopt
     """
     def __init__(cargs, text, kind='cxx'):
         cargs._str = text
@@ -240,6 +283,9 @@ class CArgspec(ub.NiceRepr):
         if cargs._cleaned:
             for item in text.split(','):
                 cargs.args.append(CArg.parse(item))
+
+    def copy(self):
+        return copy.deepcopy(self)
 
     def __iter__(cargs):
         return iter(cargs.args)
@@ -271,7 +317,7 @@ class CXXIntrospect(object):
         >>> from c_introspect import *
         >>> classname = 'oriented_bounding_box'
         >>> self = CXXIntrospect(classname)
-        >>> self.parse_cxx_class()
+        >>> self.parse_cxx_class_header()
         >>> self.dump_c_bindings()
     """
     def __init__(self, classname):
@@ -280,13 +326,11 @@ class CXXIntrospect(object):
         self.cxx_method_infos = []
         self.cxx_rel_includes = []
 
-    def parse_cxx_class(self):
+    def parse_cxx_class_header(self):
         cxx_path = join(self.cxx_type_base, self.classname + '.h')
 
-        import ubelt as ub
         text = ub.readfrom(cxx_path)
 
-        import re
         # Remove comments
         text = re.sub(C_SINGLE_COMMENT, '', text)
         text = re.sub(C_MULTI_COMMENT, '', text, flags=re.MULTILINE | re.DOTALL)
@@ -294,50 +338,25 @@ class CXXIntrospect(object):
         flags = re.MULTILINE | re.DOTALL
 
         # Regex for attempting to match a cxx func
-        cxx_func_def = WHITESPACE.join([
-            STARTLINE + SPACE + '\\b' + named('return_type', TYPENAME),
-            '\s',
-            named('c_funcname', VARNAME),
-            lparen,
-            named('argspec', '[^-+]*?'),
-            rparen,
-            optional(named('is_const', 'const')),
-            optional(named('is_init0', '=' + WHITESPACE + '0')),
-            regex_or([
-                named('semi', ';'),
-                named('begin_body', rcurly),
-            ]),
-        ])
+        # function-definition:
+        # attribute-specifier-seqopt decl-specifier-seqopt declarator function-body     C++0x
+        # attribute-specifier-seqopt decl-specifier-seqopt declarator = default ;     C++0x
+        # attribute-specifier-seqopt decl-specifier-seqopt declarator = delete ;     C++0x
 
-        # match = re.search(cxx_func_def, text, flags=flags)
-        # d = match.groupdict()
-        # print('match = {!r}'.format(match))
-
-        cxx_method_infos = []
-        for match in re.finditer(cxx_func_def, text, flags=flags):
-            # print('match = {!r}'.format(match))
-            d = match.groupdict()
-            if d.get('argspec', None) is not None:
-                d['argspec'] = CArgspec(d.get('argspec'), kind='cxx')
-            for k, v in d.items():
-                if k.startswith('is_'):
-                    d[k] = v is not None
-            cxx_method_infos.append(d)
-        self.cxx_method_infos = cxx_method_infos
-        import utool as ut
-        print('cxx_method_infos = {}'.format(ut.repr4(cxx_method_infos)))
+        self.parse_cxx_methods(text, flags)
 
         cxx_constructor_def = WHITESPACE.join([
             STARTLINE + SPACE + '\\b' + self.classname,
             lparen,
             named('argspec', '[^-+]*?'),
             rparen,
-            optional(named('initilizer', ':.*?')),
-            # optional(named('is_const', 'const')),
+            # optional(CV_QUALIFIER),
             # optional(named('is_init0', '=' + WHITESPACE + '0')),
             regex_or([
-                named('semi', ';'),
-                named('begin_body', rcurly),
+                # initializer-clause
+                optional(named('initilizer', ':.*?')),
+                named('braced_init_list', rcurly),
+                ';',
             ]),
         ])
         cxx_constructor_infos = []
@@ -362,6 +381,42 @@ class CXXIntrospect(object):
         for match in re.finditer(cxx_rel_header, text, flags=flags):
             self.cxx_rel_includes.append(match.groupdict()['header'])
 
+    def parse_cxx_methods(self, text, flags):
+        cxx_func_def = WHITESPACE.join([
+            STARTLINE + SPACE + '\\b' + named('return_type', TYPENAME),
+            '\s',
+            named('c_funcname', VARNAME),
+            lparen,
+            named('argspec', '[^-+]*?'),
+            rparen,
+            optional(CV_QUALIFIER),
+            # should go in initializer clause
+            optional(named('is_init0', '=' + WHITESPACE + '0')),
+            regex_or([
+                # initializer-clause
+                named('semi', ';'),
+                named('braced_init_list', rcurly),
+            ]),
+        ])
+
+        # match = re.search(cxx_func_def, text, flags=flags)
+        # d = match.groupdict()
+        # print('match = {!r}'.format(match))
+
+        cxx_method_infos = []
+        for match in re.finditer(cxx_func_def, text, flags=flags):
+            # print('match = {!r}'.format(match))
+            d = match.groupdict()
+            if d.get('argspec', None) is not None:
+                d['argspec'] = CArgspec(d.get('argspec'), kind='cxx')
+            for k, v in d.items():
+                if k.startswith('is_'):
+                    d[k] = v is not None
+            cxx_method_infos.append(d)
+        self.cxx_method_infos = cxx_method_infos
+        import utool as ut
+        print('cxx_method_infos = {}'.format(ut.repr4(cxx_method_infos)))
+
     def dump_c_bindings(self):
         fmtdict = {
             'c_type': 'vital_{classname}_t'.format(classname=self.classname),
@@ -370,7 +425,24 @@ class CXXIntrospect(object):
             'CLASSNAME': self.classname.upper()
         }
 
-        header = ub.codeblock(
+        sptr_header = self.autogen_vital_header_c(fmtdict)
+
+        parts = [sptr_header]
+
+        for n, info in enumerate(self.cxx_constructor_infos):
+            text = self.autogen_vital_sptr_init_c(n, info, fmtdict)
+            parts.append(text)
+
+        for info in self.cxx_method_infos:
+            text = self.autogen_vital_method_c(info, fmtdict)
+            parts.append(text)
+
+        # print(text)
+        text = '\n\n'.join(parts)
+        print(text)
+
+    def autogen_vital_header_c(self, fmtdict):
+        sptr_header = ub.codeblock(
             '''
             {copyright}
 
@@ -390,59 +462,57 @@ class CXXIntrospect(object):
             using namespace kwiver;
 
             ''').format(**fmtdict)
+        return sptr_header
 
-        has_sptr = True
-        body_parts = []
+    def autogen_vital_sptr_init_c(self, n, info, fmtdict):
+        construct_fmt = ub.codeblock(
+            '''
+            {c_type}*
+            vital_{classname}_from_{init_name}( {c_argspec} )
+            {{
+              STANDARD_CATCH(
+                "vital_{classname}_from_{init_name}", eh,
 
-        if has_sptr:
-            construct_fmt = ub.codeblock(
-                '''
-                {c_type}*
-                vital_{classname}_from_{init_name}( {c_argspec}, vital_error_handle_t *eh=NULL)
-                {{
-                  STANDARD_CATCH(
-                    "vital_{classname}_from_{init_name}", eh,
+                // TODO: ENSURE THIS IS CORRECT
+                {c_to_cxx_conversion}
 
-                    // TODO: ENSURE THIS IS CORRECT
-                    {c_to_cxx_conversion}
+                auto _sptr = std::make_shared< vital::{classname} >( {cxx_callargs} );
+                vital_c::{CLASSNAME}_SPTR_CACHE.store( _sptr );
 
-                    auto _sptr = std::make_shared< vital::{classname} >( {cxx_callargs} );
-                    vital_c::{CLASSNAME}_SPTR_CACHE.store( _sptr );
+                return reinterpret_cast< {c_type}* >( _sptr.get() );
 
-                    return reinterpret_cast< {c_type}* >( _sptr.get() );
+              );
+              return NULL;
+            }}
+            ''')
 
-                  );
-                  return NULL;
-                }}
-                ''')
-        else:
-            assert False
+        init_name = 'v{}'.format(n)
 
-        for n, info in enumerate(self.cxx_constructor_infos):
-            init_name = 'v{}'.format(n)
+        argsepc = info['argspec']
 
-            argsepc = info['argspec']
+        argsepc.copy()
 
-            cxx_callargs = argsepc.format_callargs_cxx()
+        cxx_callargs = argsepc.format_callargs_cxx()
 
-            c_to_cxx_conversion = ub.indent(
-                argsepc.c_to_cxx_conversion(), ' ' * 4).lstrip()
+        c_to_cxx_conversion = ub.indent(
+            argsepc.c_to_cxx_conversion(), ' ' * 4).lstrip()
 
-            # Hack
-            argsepc.args.append(
-                CArg('vital_error_handle_t *', 'eh', default='NULL')
-            )
-            c_argspec = argsepc.format_argspec_c()
+        # Hack
+        argsepc.args.append(
+            CArg('vital_error_handle_t *', 'eh', default='NULL')
+        )
+        c_argspec = argsepc.format_argspec_c()
 
-            text = construct_fmt.format(
-                init_name=init_name,
-                c_argspec=c_argspec,
-                cxx_callargs=cxx_callargs,
-                c_to_cxx_conversion=c_to_cxx_conversion,
-                **fmtdict,
-            )
-            body_parts.append(text)
+        text = construct_fmt.format(
+            init_name=init_name,
+            c_argspec=c_argspec,
+            cxx_callargs=cxx_callargs,
+            c_to_cxx_conversion=c_to_cxx_conversion,
+            **fmtdict,
+        )
+        return text
 
+    def autogen_vital_method_c(self, info, fmtdict):
         # TODO: handle outvars
         c_bind_method = ut.codeblock(
             '''
@@ -459,36 +529,29 @@ class CXXIntrospect(object):
             }}
         ''')
 
-        for n, info in enumerate(self.cxx_method_infos):
+        return_arg = CArg(info['return_type'], 'retvar')
 
-            return_arg = CArg(info['return_type'], 'retvar')
+        argsepc = info['argspec']
+        cxx_callargs = argsepc.format_callargs_cxx()
 
-            argsepc = info['argspec']
-            cxx_callargs = argsepc.format_callargs_cxx()
+        c_to_cxx_conversion = ub.indent(
+            argsepc.c_to_cxx_conversion(), ' ' * 4).lstrip()
 
-            c_to_cxx_conversion = ub.indent(
-                argsepc.c_to_cxx_conversion(), ' ' * 4).lstrip()
+        # Hack
+        argsepc.args.insert(0, CArg('{} *'.format(fmtdict['c_type']), 'self'))
+        argsepc.args.append(CArg('vital_error_handle_t *', 'eh', default='NULL'))
+        c_argspec = argsepc.format_argspec_c()
 
-            # Hack
-            argsepc.args.insert(0, CArg('{} *'.format(fmtdict['c_type']), 'self'))
-            argsepc.args.append(CArg('vital_error_handle_t *', 'eh', default='NULL'))
-            c_argspec = argsepc.format_argspec_c()
-
-            text = c_bind_method.format(
-                c_return_type=return_arg.c_argtype(),
-                return_convert=return_arg.cxx_to_c(),
-                init_name=init_name,
-                c_funcname=info['c_funcname'],
-                c_argspec=c_argspec,
-                cxx_callargs=cxx_callargs,
-                c_to_cxx_conversion=c_to_cxx_conversion,
-                **fmtdict,
-            )
-            body_parts.append(text)
-
-        # print(text)
-        text = header + '\n\n'.join(body_parts)
-        print(text)
+        text = c_bind_method.format(
+            c_return_type=return_arg.c_argtype(),
+            return_convert=return_arg.cxx_to_c(),
+            c_funcname=info['c_funcname'],
+            c_argspec=c_argspec,
+            cxx_callargs=cxx_callargs,
+            c_to_cxx_conversion=c_to_cxx_conversion,
+            **fmtdict,
+        )
+        return text
 
 
 class CBindIntrospect(object):
@@ -591,7 +654,7 @@ class CBindIntrospect(object):
             lparen,
             named('argspec', '.*?'),
             rparen,
-            named('begin_body', rcurly),
+            named('braced_init_list', rcurly),
             # ENDLINE
         ])
 
@@ -763,7 +826,7 @@ def regex_cpp_vital_type_introspect():
         named('funcname', VARNAME),
         lparen,
         rparen,
-        optional(named('is_const', 'const')),
+        optional(named('cv_qualifier', CV_QUALIFIER)),
         optional(named('is_init0', '=' + WHITESPACE + '0')),
         regex_or([
             named('semi', ';'),
@@ -865,3 +928,11 @@ def regex_cpp_vital_type_introspect():
 
 #     # index = clang.cindex.Index.create()
 #     # tu = index.parse(fpath)
+
+if __name__ == '__main__':
+    r"""
+    CommandLine:
+        python -m vital.types.c_introspect
+    """
+    import pytest
+    pytest.main([__file__, '--doctest-modules'])
