@@ -16,7 +16,7 @@
  *    to endorse or promote products derived from this software without specific
  *    prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS IS''
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR
@@ -30,53 +30,43 @@
 
 /**
  * \file
- * \brief Interface for track_descriptor_set_input process
+ * \brief Header for OCV split_image algorithm
  */
 
-#ifndef _KWIVER_TRACK_DESCRIPTOR_INPUT_PROCESS_H
-#define _KWIVER_TRACK_DESCRIPTOR_INPUT_PROCESS_H
+#ifndef KWIVER_ARROWS_OCV_SPLIT_IMAGE_H_
+#define KWIVER_ARROWS_OCV_SPLIT_IMAGE_H_
 
-#include <sprokit/pipeline/process.h>
 
-#include "kwiver_processes_export.h"
+#include <vital/vital_config.h>
+#include <arrows/ocv/kwiver_algo_ocv_export.h>
+
+#include <vital/algo/split_image.h>
 
 #include <memory>
 
-namespace kwiver
-{
+namespace kwiver {
+namespace arrows {
+namespace ocv {
 
-  // ----------------------------------------------------------------
-/**
- * \class track_descriptor_input_process
- *
- * \brief Reads a series of images
- *
- * \iports
- * \iport{image_name}
- * \iport{track descriptor_set}
- *
- */
-class KWIVER_PROCESSES_NO_EXPORT track_descriptor_input_process
-  : public sprokit::process
+/// A class for drawing various information about feature tracks
+class KWIVER_ALGO_OCV_EXPORT split_image
+: public vital::algorithm_impl<split_image, vital::algo::split_image>
 {
 public:
-  track_descriptor_input_process( kwiver::vital::config_block_sptr const& config );
-  virtual ~track_descriptor_input_process();
 
-protected:
-  virtual void _configure();
-  virtual void _init();
-  virtual void _step();
+  /// Constructor
+  split_image();
 
-private:
-  void make_ports();
-  void make_config();
+  /// Destructor
+  virtual ~split_image();
 
-  class priv;
-  const std::unique_ptr<priv> d;
-}; // end class track_descriptor_input_process
+  /// Split image
+  virtual std::vector< kwiver::vital::image_container_sptr >
+  split(kwiver::vital::image_container_sptr img) const;
+};
 
+} // end namespace ocv
+} // end namespace arrows
+} // end namespace kwiver
 
-} // end namespace
-
-#endif // _KWIVER_TRACK_DESCRIPTOR_INPUT_PROCESS_H
+#endif // KWIVER_ARROWS_OCV_SPLIT_IMAGE_H_

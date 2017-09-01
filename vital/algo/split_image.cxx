@@ -28,100 +28,38 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * \file
- * \brief Implementation of load/save wrapping functionality.
- */
-
-#include "track_descriptor_set_output.h"
-
 #include <vital/algo/algorithm.txx>
-#include <vital/exceptions/io.h>
-#include <vital/vital_types.h>
 
-#include <kwiversys/SystemTools.hxx>
+#include "split_image.h"
 
-/// \cond DoxygenSuppress
-INSTANTIATE_ALGORITHM_DEF(kwiver::vital::algo::track_descriptor_set_output);
-/// \endcond
-
+INSTANTIATE_ALGORITHM_DEF(kwiver::vital::algo::split_image);
 
 namespace kwiver {
 namespace vital {
 namespace algo {
 
-track_descriptor_set_output
-::track_descriptor_set_output()
-  : m_stream( 0 )
-  , m_stream_owned( false )
+split_image
+::split_image()
 {
-  attach_logger( "track_descriptor_set_output" );
+  attach_logger( "split_image" );
 }
 
 
-track_descriptor_set_output
-::~track_descriptor_set_output()
-{
-}
-
-
-// ------------------------------------------------------------------
+/// Set this algorithm's properties via a config block
 void
-track_descriptor_set_output
-::open( std::string const& filename )
+split_image
+::set_configuration(kwiver::vital::config_block_sptr config)
 {
-  // try to open the file
-  std::ostream* file( new std::ofstream( filename ) );
-  if ( ! file )
-  {
-    kwiver::vital::file_not_found_exception( filename, "open failed"  );
-  }
-
-  m_stream = file;
-  m_stream_owned = true;
-  m_filename = filename;
+  (void) config;
 }
 
-
-// ------------------------------------------------------------------
-void
-track_descriptor_set_output
-::use_stream( std::ostream* strm )
+/// Check that the algorithm's current configuration is valid
+bool
+split_image
+::check_configuration(kwiver::vital::config_block_sptr config) const
 {
-  m_stream = strm;
-  m_stream_owned = false;
-}
-
-
-// ------------------------------------------------------------------
-void
-track_descriptor_set_output
-::close()
-{
-  if ( m_stream_owned )
-  {
-    delete m_stream;
-  }
-
-  m_stream = 0;
-}
-
-
-// ------------------------------------------------------------------
-std::ostream&
-track_descriptor_set_output
-::stream()
-{
-  return *m_stream;
-}
-
-
-// ------------------------------------------------------------------
-std::string const&
-track_descriptor_set_output
-::filename()
-{
-  return m_filename;
+  (void) config;
+  return true;
 }
 
 

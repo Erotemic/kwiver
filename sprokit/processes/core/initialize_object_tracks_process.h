@@ -28,44 +28,56 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * \file
- * \brief Interface for track_descriptor_set_output_csv
- */
+#ifndef _KWIVER_INITIALIZE_OBJECT_TRACKS_PROCESS_H_
+#define _KWIVER_INITIALIZE_OBJECT_TRACKS_PROCESS_H_
 
-#ifndef KWIVER_ARROWS_TRACK_DESCRIPTOR_SET_OUTPUT_CSV_H
-#define KWIVER_ARROWS_TRACK_DESCRIPTOR_SET_OUTPUT_CSV_H
+#include "kwiver_processes_export.h"
 
-#include <vital/vital_config.h>
-#include <arrows/core/kwiver_algo_core_export.h>
-
-#include <vital/algo/track_descriptor_set_output.h>
+#include <sprokit/pipeline/process.h>
 
 #include <memory>
 
-namespace kwiver {
-namespace arrows {
-namespace core {
-
-class KWIVER_ALGO_CORE_EXPORT track_descriptor_set_output_csv
-  : public vital::algorithm_impl<track_descriptor_set_output_csv,
-      vital::algo::track_descriptor_set_output>
+namespace kwiver
 {
-public:
-  track_descriptor_set_output_csv();
-  virtual ~track_descriptor_set_output_csv();
 
-  virtual void set_configuration( vital::config_block_sptr config );
-  virtual bool check_configuration( vital::config_block_sptr config ) const;
+// -----------------------------------------------------------------------------
+/**
+ * \class initialize_object_tracks_process
+ *
+ * \brief Initialized new tracks given object detections.
+ *
+ *  On optional input track port will union the input track set and newly
+ *  initialized tracks.
+ * 
+ * \iports
+ * \iport{timestamp}
+ * \iport{image}
+ * \iport{detections}
+ * \iport{tracks}
+ *
+ * \oports
+ * \oport{tracks}
+ */
+class KWIVER_PROCESSES_NO_EXPORT initialize_object_tracks_process
+  : public sprokit::process
+{
+  public:
+  initialize_object_tracks_process( vital::config_block_sptr const& config );
+  virtual ~initialize_object_tracks_process();
 
-  virtual void write_set( const kwiver::vital::track_descriptor_set_sptr set,
-    std::string const& image_name );
+  protected:
+    virtual void _configure();
+    virtual void _step();
+    virtual void _init();
 
-private:
-  class priv;
-  std::unique_ptr< priv > d;
-};
+  private:
+    void make_ports();
+    void make_config();
 
-} } } // end namespace
+    class priv;
+    const std::unique_ptr<priv> d;
+ }; // end class initialize_object_tracks_process
 
-#endif // KWIVER_ARROWS_TRACK_DESCRIPTOR_SET_OUTPUT_CSV_H
+
+} // end namespace
+#endif /* _KWIVER_INITIALIZE_OBJECT_TRACKS_PROCESS_H_ */

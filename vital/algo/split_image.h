@@ -16,7 +16,7 @@
  *    to endorse or promote products derived from this software without specific
  *    prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS IS''
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR
@@ -28,54 +28,45 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * \file
- * \brief Interface for track_descriptor_set_output process
- */
+#ifndef VITAL_ALGO_SPLIT_IMAGE_H_
+#define VITAL_ALGO_SPLIT_IMAGE_H_
 
-#ifndef _KWIVER_TRACK_DESCRIPTOR_OUTPUT_PROCESS_H
-#define _KWIVER_TRACK_DESCRIPTOR_OUTPUT_PROCESS_H
+#include <vital/vital_config.h>
 
-#include <sprokit/pipeline/process.h>
-#include "kwiver_processes_export.h"
-
+#include <string>
 #include <memory>
 
-namespace kwiver
-{
+#include <vital/algo/algorithm.h>
+#include <vital/types/image_container.h>
 
-  // ----------------------------------------------------------------
-/**
- * \class track_descriptor_output_process
- *
- * \brief Reads a series of images
- *
- * \iports
- * \iport{image_name}
- * \iport{track descriptor_set}
- *
- */
-class KWIVER_PROCESSES_NO_EXPORT track_descriptor_output_process
-  : public sprokit::process
+namespace kwiver {
+namespace vital {
+namespace algo {
+
+/// An abstract base class for converting base image type
+class VITAL_ALGO_EXPORT split_image
+  : public kwiver::vital::algorithm_def<split_image>
 {
 public:
-  track_descriptor_output_process( kwiver::vital::config_block_sptr const& config );
-  virtual ~track_descriptor_output_process();
+  /// Return the name of this algorithm
+  static std::string static_type_name() { return "split_image"; }
+
+  /// Set this algorithm's properties via a config block
+  virtual void set_configuration(kwiver::vital::config_block_sptr config);
+  /// Check that the algorithm's currently configuration is valid
+  virtual bool check_configuration(kwiver::vital::config_block_sptr config) const;
+
+  /// Split image
+  virtual std::vector< kwiver::vital::image_container_sptr >
+    split(kwiver::vital::image_container_sptr img) const = 0;
 
 protected:
-  virtual void _configure();
-  virtual void _init();
-  virtual void _step();
+  split_image();
 
-private:
-  void make_ports();
-  void make_config();
+};
 
-  class priv;
-  const std::unique_ptr<priv> d;
-}; // end class track_descriptor_output_process
+typedef std::shared_ptr<split_image> split_image_sptr;
 
+} } } // end namespace
 
-} // end namespace
-
-#endif // _KWIVER_TRACK_DESCRIPTOR_OUTPUT_PROCESS_H
+#endif // VITAL_ALGO_SPLIT_IMAGE_H_

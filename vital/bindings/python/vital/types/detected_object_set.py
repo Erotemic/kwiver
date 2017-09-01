@@ -126,7 +126,8 @@ class DetectedObjectSet (VitalObject, NiceRepr):
 
         output = []
         for i in range( length.value ):
-            output.append( DetectedObject( from_cptr=DetectedObject.c_ptr_type()( c_output[i].contents ) ) )
+            cptr = DetectedObject.c_ptr_type()(c_output[i].contents)
+            output.append( DetectedObject(from_cptr = cptr) )
 
         free_void_ptr( c_output )
         return output

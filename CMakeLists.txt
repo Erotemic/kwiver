@@ -173,8 +173,7 @@ if (KWIVER_ENABLE_PYTHON)
       message(STATUS "Python site-packages to install into: ${python_site_packages}")
     endif()
 
-    # TODO Get version from above
-    set(PYTHON_VERSION "2.7"
+    set(PYTHON_VERSION "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}"
       CACHE STRING "The version of python to use for bindings")
     set(PYTHON_ABIFLAGS ""
       CACHE STRING "The ABI flags for the version of Python being used")
