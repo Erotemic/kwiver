@@ -1,3 +1,16 @@
+"""
+Notes:
+    C++ uses a left-recursive (non-context free) grammer, so we are not going
+    to be able to parse it easilly. The goal of this is to implement some
+    hueristics to parse C++ code on a file-by-file basis. Its purpose is to
+    autogenerate a template that can then be modified as desired.
+
+
+References:
+    # C++ BNF Grammar
+    http://www.nongnu.org/hcb/
+
+"""
 import re
 import ubelt as ub
 import copy
@@ -53,14 +66,6 @@ class MethodInfo(ub.NiceRepr):
         return '{}({}) -> {}'.format(self.info['c_funcname'],
                                      argspec_type_str,
                                      self.info['return_type'])
-
-    def cxx_funcname(self):
-        prefix = 'vital_{}_'.format(self.classname)
-        funcname = self.info['c_funcname']
-        if funcname.startswith(prefix):
-            return funcname[len(prefix):]
-        else:
-            return funcname
 
 
 class CPatternMatch(object):
@@ -119,7 +124,7 @@ class CPatternMatch(object):
         ...     class dummy;
         ...
         ...     typedef std::shared_ptr< dummy > dummy_sptr;
-
+        ...
         ...     dummy( const int& a, int x=a(), int y=b(1, d()), int z = q(1) );
         ...     dummy( const int& a, int x=a(), int z = q(1) );
         ...     dummy( const int& a, int z = q(1) );
@@ -131,7 +136,9 @@ class CPatternMatch(object):
         ...     virtual ~dummy() VITAL_DEFAULT_DTOR
         ...     ''')
         >>> classname = 'dummy'
-        >>> CPatternMatch.constructors(text, classname)
+        >>> method_infos = CPatternMatch.constructors(text, classname)
+        >>> for info in method_infos:
+        >>>     print(list(map(str, info['argspec'].args)))
 
         """
         argspec_pattern = CPatternMatch.balanced_paren_hack()
@@ -347,6 +354,13 @@ class CArgspec(ub.NiceRepr):
         ( parameter-declaration-clause ) attribute-specifier-seqopt \
                 cv-qualifier-seqopt ref-qualifieropt \
                 exception-specificationopt
+
+    Example:
+        >>> # DISABLE_DOCTEST
+        >>> sys.path.append('/home/joncrall/code/VIAME/packages/kwiver/vital/bindings')
+        >>> from c_patterns import *
+        >>> text = 'const int& a, int x=a("foob,a()r"), int y=b(1, d()), int z = q(1)'
+        >>> CArgspec(text)
     """
 
     _CARG = CArg  # HACK (changed to VitalCArg)
@@ -359,9 +373,27 @@ class CArgspec(ub.NiceRepr):
         text = re.sub('  *', ' ', text)
         cargs._cleaned = text
 
+        def _paren_aware_split(text):
+            import utool as ut
+            parts = []
+            prev_nested = False
+            for tag, part in ut.parse_nestings2(text):
+                if tag == 'nonNested':
+                    part_split = part.split(',')
+                    if prev_nested:
+                        parts[-1] += part_split[0]
+                        parts += part_split[1:]
+                    else:
+                        parts += part_split
+                    prev_nested = False
+                else:
+                    parts[-1] += ut.recombine_nestings([(tag, part)])
+                    prev_nested = True
+            return parts
+
         cargs.args = []
         if cargs._cleaned:
-            for item in text.split(','):
+            for item in _paren_aware_split(text):
                 cargs.args.append(cargs._CARG.parse(item))
 
     def copy(self):
@@ -372,6 +404,9 @@ class CArgspec(ub.NiceRepr):
 
     def __nice__(cargs):
         return str(list(map(str, cargs.args)))
+
+    def format_argspec(cargs):
+        return ', '.join([carg.__nice__() for carg in cargs])
 
     def format_typespec_python(cargs):
         return ', '.join([carg.python_ctypes() for carg in cargs])
@@ -416,19 +451,23 @@ class CType(ub.NiceRepr):
     Note:
         unsigned int const == unsigned int const
 
-    CType('char const * * const * * const * &&').tokens
-    CType('char const * * const * * const * &&')
-    CType('char const * * const * * const &&').tokens
-    CType('char const * * const * * const * &').tokens
-    CType('char const * * const * * const &').tokens
-    CType('const int&')
-    CType('vector< std::string >').tokens
-    CType('unsigned int')
-    CType('unsigned const int').ref_degree
-    CType('unsigned const int&').ref_degree
-    CType('long long long').base
-    ctype = CType('const volatile long long long &')
-    ctype = CType('signed long long int')
+    Example:
+        >>> import sys
+        >>> sys.path.append('/home/joncrall/code/VIAME/packages/kwiver/vital/bindings')
+        >>> from c_patterns import *
+        >>> CType('char const * * const * * const * &&').tokens
+        >>> CType('char const * * const * * const * &&')
+        >>> CType('char const * * const * * const &&').tokens
+        >>> CType('char const * * const * * const * &').tokens
+        >>> CType('char const * * const * * const &').tokens
+        >>> CType('const int&')
+        >>> CType('vector< std::string >').tokens
+        >>> CType('unsigned int')
+        >>> CType('unsigned const int').ref_degree
+        >>> CType('unsigned const int&').ref_degree
+        >>> CType('long long long').base
+        >>> ctype = CType('const volatile long long long &')
+        >>> ctype = CType('signed long long int')
     """
     def __init__(ctype, text):
         # TODO: const volatile is a thing
