@@ -1,16 +1,3 @@
-"""
-Notes:
-    C++ uses a left-recursive (non-context free) grammer, so we are not going
-    to be able to parse it easilly. The goal of this is to implement some
-    hueristics to parse C++ code on a file-by-file basis. Its purpose is to
-    autogenerate a template that can then be modified as desired.
-
-
-References:
-    # C++ BNF Grammar
-    http://www.nongnu.org/hcb/
-
-"""
 from os.path import expanduser, join
 import re
 import utool as ut
@@ -317,7 +304,7 @@ class VitalTypeIntrospectCxx(object):
         >>> self = VitalTypeIntrospectCxx(classname)
         >>> self.parse_cxx_class_header()
         >>> text = self.dump_c_bindings()
-        >>> print(ub.highlight_code(text, 'cxx'))
+        >>> print(ub.highlight_code(text, 'cpp'))
     """
     def __init__(self, classname):
         self.classname = classname
