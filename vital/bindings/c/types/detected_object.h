@@ -100,11 +100,12 @@ void vital_detected_object_detector_setname(vital_detected_object_t * obj,
                                             char* name );
 
 VITAL_C_EXPORT
-vital_image_t* vital_detected_object_mask(vital_detected_object_t * obj);
+vital_image_container_t* vital_detected_object_mask(vital_detected_object_t * obj, vital_error_handle_t* eh);
 
 VITAL_C_EXPORT
 void vital_detected_object_set_mask(vital_detected_object_t * obj,
-                                    vital_image_t* mask);
+                                    vital_image_container_t* mask
+                                    vital_error_handle_t* eh);
 
 #ifdef __cplusplus
 }

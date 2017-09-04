@@ -36,11 +36,84 @@ Interface to VITAL detected_object class.
 import ctypes
 
 from vital.util import VitalObject
+from vital.util import VITAL_LIB
 from vital.util import VitalErrorHandle
 
 from vital.types import BoundingBox
 from vital.types import DetectedObjectType
+from vital.types import ImageContainer
 from vital.types.mixins import NiceRepr
+
+
+def define_detected_object_c_api():
+    """
+
+    CommandLine:
+        python -m c_introspect VitalTypeIntrospectCBind.dump_python_ctypes:0 --class=detected_object
+    """
+    class detected_object_c_api(object):
+        pass
+    C = detected_object_c_api()
+    C.new_with_bbox = VITAL_LIB.vital_detected_object_new_with_bbox
+    C.new_with_bbox.argtypes = [BoundingBox.C_TYPE_PTR, ctypes.c_double, DetectedObjectType.C_TYPE_PTR]
+    C.new_with_bbox.restype = DetectedObject.C_TYPE_PTR
+
+    C.copy = VITAL_LIB.vital_detected_object_copy
+    C.copy.argtypes = [DetectedObject.C_TYPE_PTR]
+    C.copy.restype = DetectedObject.C_TYPE_PTR
+
+    C.destroy = VITAL_LIB.vital_detected_object_destroy
+    C.destroy.argtypes = [DetectedObject.C_TYPE_PTR]
+    C.destroy.restype = None
+
+    C.bounding_box = VITAL_LIB.vital_detected_object_bounding_box
+    C.bounding_box.argtypes = [DetectedObject.C_TYPE_PTR]
+    C.bounding_box.restype = BoundingBox.C_TYPE_PTR
+
+    C.set_bounding_box = VITAL_LIB.vital_detected_object_set_bounding_box
+    C.set_bounding_box.argtypes = [DetectedObject.C_TYPE_PTR, BoundingBox.C_TYPE_PTR]
+    C.set_bounding_box.restype = None
+
+    C.confidence = VITAL_LIB.vital_detected_object_confidence
+    C.confidence.argtypes = [DetectedObject.C_TYPE_PTR]
+    C.confidence.restype = ctypes.c_double
+
+    C.set_confidence = VITAL_LIB.vital_detected_object_set_confidence
+    C.set_confidence.argtypes = [DetectedObject.C_TYPE_PTR, ctypes.c_double]
+    C.set_confidence.restype = None
+
+    C.get_type = VITAL_LIB.vital_detected_object_get_type
+    C.get_type.argtypes = [DetectedObject.C_TYPE_PTR]
+    C.get_type.restype = DetectedObjectType.C_TYPE_PTR
+
+    C.set_type = VITAL_LIB.vital_detected_object_set_type
+    C.set_type.argtypes = [DetectedObject.C_TYPE_PTR, DetectedObjectType.C_TYPE_PTR]
+    C.set_type.restype = None
+
+    C.index = VITAL_LIB.vital_detected_object_index
+    C.index.argtypes = [DetectedObject.C_TYPE_PTR]
+    C.index.restype = ctypes.c_int64
+
+    C.set_index = VITAL_LIB.vital_detected_object_set_index
+    C.set_index.argtypes = [DetectedObject.C_TYPE_PTR, ctypes.c_int64]
+    C.set_index.restype = None
+
+    C.detector_name = VITAL_LIB.vital_detected_object_detector_name
+    C.detector_name.argtypes = [DetectedObject.C_TYPE_PTR]
+    C.detector_name.restype = ctypes.POINTER(ctypes.c_char)
+
+    C.detector_set_name = VITAL_LIB.vital_detected_object_detector_set_name
+    C.detector_set_name.argtypes = [DetectedObject.C_TYPE_PTR, ctypes.POINTER(ctypes.c_char)]
+    C.detector_set_name.restype = None
+
+    C.mask = VITAL_LIB.vital_detected_object_mask
+    C.mask.argtypes = [DetectedObject.C_TYPE_PTR, VitalErrorHandle.C_TYPE_PTR]
+    C.mask.restype = ImageContainer.C_TYPE_PTR
+
+    C.set_mask = VITAL_LIB.vital_detected_object_set_mask
+    C.set_mask.argtypes = [DetectedObject.C_TYPE_PTR, ImageContainer.C_TYPE_PTR, VitalErrorHandle.C_TYPE_PTR]
+    C.set_mask.restype = None
+    return C
 
 
 class DetectedObject (VitalObject, NiceRepr):
@@ -54,6 +127,7 @@ class DetectedObject (VitalObject, NiceRepr):
     TODO:
         add mask getter / setter
     """
+    C = define_detected_object_c_api()
 
     def __init__(self, bbox=None, confid=0.0, tot=None, from_cptr=None):
         """
@@ -136,6 +210,26 @@ class DetectedObject (VitalObject, NiceRepr):
         else:
             obj_type = DetectedObjectType(from_cptr=c_ptr)
             return obj_type
+
+    def mask(self):
+        """
+        Ignore:
+            workon_py2
+            source ~/code/VIAME/build/install/setup_viame.sh
+            export KWIVER_DEFAULT_LOG_LEVEL=info
+            export PYTHONPATH=$HOME/code/VIAME/plugins/camtrawl:$PYTHONPATH
+            export SPROKIT_PYTHON_MODULES=kwiver.processes:viame.processes:camtrawl_processes
+
+        Example:
+            >>> from vital.types import DetectedObject
+            >>> self = DetectedObject([0, 0, 1, 1])
+        """
+        with VitalErrorHandle() as eh:
+            return self.C.mask(eh)
+
+    def set_mask(self, mask):
+        with VitalErrorHandle() as eh:
+            self.C.set_mask(mask, eh)
 
     def set_type(self, ob_type):
         """

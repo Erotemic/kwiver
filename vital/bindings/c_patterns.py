@@ -12,8 +12,13 @@ References:
 
 """
 import re
+import six
 import ubelt as ub
 import copy
+
+NATIVE_TYPES = {
+    'double', 'int', 'float', 'bool', 'char', 'int64_t'
+}
 
 C_SINGLE_COMMENT = '//.*'
 C_MULTI_COMMENT = r'/\*.*?\*/'
@@ -30,7 +35,6 @@ WHITESPACE =  r'\s*'
 SPACE = '[ \t]*'
 
 VARNAME = '[A-Za-z_][A-Za-z0-9_]*'
-TYPENAME = '[A-Za-z_:][:<>A-Za-z0-9_*]*'
 
 
 def named(key, regex):
@@ -46,6 +50,9 @@ def regex_or(list_):
 
 
 CV_QUALIFIER = regex_or(['const', 'volatile'])
+
+_TYPENAME = '[A-Za-z_:][:<>A-Za-z0-9_*]*'
+TYPENAME = optional(CV_QUALIFIER + '\s+') + _TYPENAME + optional('\s*?(&|&&)')
 
 
 class MethodInfo(ub.NiceRepr):
@@ -63,7 +70,7 @@ class MethodInfo(ub.NiceRepr):
 
     def __nice__(self):
         argspec_type_str = self.info['argspec'].format_typespec()
-        return '{}({}) -> {}'.format(self.info['c_funcname'],
+        return '{}({}) -> {}'.format(self.info['cxx_funcname'],
                                      argspec_type_str,
                                      self.info['return_type'])
 
@@ -164,7 +171,7 @@ class CPatternMatch(object):
             # match_text = match.string[match.start():match.end()]
             # print('match_text = {!r}'.format(match_text.replace('\n', ' ').strip()))
             d = match.groupdict()
-            d['c_funcname'] = '__init__'
+            d['cxx_funcname'] = '__init__'
             d['return_type'] = classname + '*'
             info = MethodInfo(d)
             cxx_constructor_infos.append(info)
@@ -187,7 +194,7 @@ class CPatternMatch(object):
         cxx_func_def = WHITESPACE.join([
             STARTLINE + SPACE + '\\b' + named('return_type', TYPENAME),
             '\s',
-            named('c_funcname', VARNAME),
+            named('cxx_funcname', VARNAME),
             lparen,
             named('argspec', '[^-+;]*?'),  # This needs work
             rparen,
@@ -209,6 +216,8 @@ class CPatternMatch(object):
         cxx_func_declares = []
         for match in re.finditer(cxx_func_def, text, flags=flags):
             # print('match = {!r}'.format(match))
+            match_text = match.string[match.start():match.end()]
+            print('match_text = {!r}'.format(match_text.replace('\n', ' ').strip()))
             d = match.groupdict()
             info = MethodInfo(d)
             info.classname = classname
@@ -232,7 +241,7 @@ class CPatternMatch(object):
         cxx_func_def = WHITESPACE.join([
             STARTLINE + SPACE + '\\b' + named('return_type', TYPENAME),
             '\s',
-            named('c_funcname', VARNAME),
+            named('cxx_funcname', VARNAME),
             lparen,
             named('argspec', '[^;]*'),  # This needs work
             rparen,
@@ -288,7 +297,6 @@ class CArg(ub.NiceRepr):
 
     """
     def __init__(carg, type, name=None, default=None, orig_text=None):
-        import six
         if isinstance(type, six.string_types):
             type = CType(type)
         carg.type = type
@@ -411,15 +419,8 @@ class CArgspec(ub.NiceRepr):
     def format_typespec_python(cargs):
         return ', '.join([carg.python_ctypes() for carg in cargs])
 
-    def format_argspec_c(cargs):
-        return ', '.join([carg.c_spec() for carg in cargs])
-
     def format_callargs_cxx(cargs):
         return ', '.join([carg.cxx_name() for carg in cargs])
-
-    def c_to_cxx_conversion(cargs):
-        block = '\n'.join([str(carg.c_to_cxx()) for carg in cargs])
-        return block
 
     def format_typespec(cargs):
         return ', '.join([str(carg.type) for carg in cargs])
@@ -469,7 +470,14 @@ class CType(ub.NiceRepr):
         >>> ctype = CType('const volatile long long long &')
         >>> ctype = CType('signed long long int')
     """
-    def __init__(ctype, text):
+    def __init__(ctype, tokens_or_text):
+        if isinstance(tokens_or_text, six.string_types):
+            ctype.tokens = ctype._tokenize(tokens_or_text)
+        else:
+            ctype.tokens = tokens_or_text
+
+    @staticmethod
+    def _tokenize(text):
         # TODO: const volatile is a thing
         cv_ = {'const', 'volatile'}
 
@@ -520,7 +528,33 @@ class CType(ub.NiceRepr):
             else:
                 curr_cv.append(c)
         _push()
-        ctype.tokens = tokens
+        return tokens
+
+    def dref(ctype):
+        """
+        Example:
+            >>> from c_patterns import *
+            >>> ctype = CType('int * const*')
+            >>> assert ctype.deref() == 'int *'
+            >>> assert ctype.deref().deref() == 'int'
+        """
+        if ctype.ptr_degree == 0:
+            raise ValueError('Cannot dereference further')
+        new_tokens = []
+        done = False
+        for t in ctype.tokens[::-1]:
+            if not done and t[0] == '*':
+                done = True
+            else:
+                new_tokens.append(t)
+        return CType(new_tokens[::-1])
+
+    def addr(ctype):
+        if ctype.ref_degree > 0:
+            new_tokens = ctype.tokens[:-1] + [('*',)] + ctype.tokens[-1:]
+        else:
+            new_tokens = ctype.tokens[:] + [('*',)]
+        return CType(new_tokens)
 
     @property
     def ref_degree(ctype):
@@ -548,5 +582,12 @@ class CType(ub.NiceRepr):
         return ''.join([''.join(t) for t in ctype.tokens])
 
     def is_native(ctype):
-        native_types = ['double', 'int', 'float', 'bool', 'char']
-        return ctype.data_base in native_types
+        return ctype.data_base in NATIVE_TYPES
+
+    def __eq__(self, other):
+        if isinstance(other, six.string_types):
+            other = CType(other)
+        if not isinstance(other, CType):
+            raise TypeError('Cannot compare {} to {}'.format(
+                type(self), type(other)))
+        return self.tokens == other.tokens
