@@ -139,7 +139,7 @@ class VitalCArg(CArg):
                 # Lookup in existing smart pointer cache
                 fmtdict['SPTR_CACHE'] = VitalRegistry.get_sptr_cachename(
                     pointed_type)
-                fmtdict['cxx_type'] = str(carg.type)
+                fmtdict['cxx_type'] = cxx_ns + str(carg.type)
 
                 if check_null:
                     text = ub.codeblock(

@@ -38,6 +38,7 @@ import ctypes
 from vital.util import VitalObject
 from vital.util import VITAL_LIB
 from vital.util import VitalErrorHandle
+from vital.util import free_void_ptr
 
 from vital.types import BoundingBox
 from vital.types import DetectedObjectType

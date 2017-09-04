@@ -37,8 +37,10 @@
 #define VITAL_C_DETECTED_OBJECT_H_
 
 #include <vital/bindings/c/vital_c_export.h>
+#include <vital/bindings/c/error_handle.h>
 #include <vital/bindings/c/types/bounding_box.h>
 #include <vital/bindings/c/types/detected_object_type.h>
+#include <vital/bindings/c/types/image_container.h>
 #include <vital/bindings/c/types/image.h>
 
 #include <stdint.h>
@@ -104,7 +106,7 @@ vital_image_container_t* vital_detected_object_mask(vital_detected_object_t * ob
 
 VITAL_C_EXPORT
 void vital_detected_object_set_mask(vital_detected_object_t * obj,
-                                    vital_image_container_t* mask
+                                    vital_image_container_t* mask,
                                     vital_error_handle_t* eh);
 
 #ifdef __cplusplus
