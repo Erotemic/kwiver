@@ -41,6 +41,7 @@ from vital.util import VitalErrorHandle
 from vital.util import free_void_ptr
 from vital.util.mixins import NiceRepr
 
+from vital.types import ImageContainer
 from vital.types import BoundingBox
 from vital.types import DetectedObjectType
 
@@ -51,62 +52,6 @@ def define_detected_object_c_api():
     CommandLine:
         python -m c_introspect VitalTypeIntrospectCBind.dump_python_ctypes:0 --class=detected_object
     """
-    from vital.types import ImageContainer
-    class detected_object_c_api(object):
-        pass
-    C = detected_object_c_api()
-    C.new_with_bbox = VITAL_LIB.vital_detected_object_new_with_bbox
-    C.new_with_bbox.argtypes = [BoundingBox.C_TYPE_PTR, ctypes.c_double, DetectedObjectType.C_TYPE_PTR]
-    C.new_with_bbox.restype = DetectedObject.C_TYPE_PTR
-
-    C.copy = VITAL_LIB.vital_detected_object_copy
-    C.copy.argtypes = [DetectedObject.C_TYPE_PTR]
-    C.copy.restype = DetectedObject.C_TYPE_PTR
-
-    C.destroy = VITAL_LIB.vital_detected_object_destroy
-    C.destroy.argtypes = [DetectedObject.C_TYPE_PTR]
-    C.destroy.restype = None
-
-    C.bounding_box = VITAL_LIB.vital_detected_object_bounding_box
-    C.bounding_box.argtypes = [DetectedObject.C_TYPE_PTR]
-    C.bounding_box.restype = BoundingBox.C_TYPE_PTR
-
-    C.set_bounding_box = VITAL_LIB.vital_detected_object_set_bounding_box
-    C.set_bounding_box.argtypes = [DetectedObject.C_TYPE_PTR, BoundingBox.C_TYPE_PTR]
-    C.set_bounding_box.restype = None
-
-    C.confidence = VITAL_LIB.vital_detected_object_confidence
-    C.confidence.argtypes = [DetectedObject.C_TYPE_PTR]
-    C.confidence.restype = ctypes.c_double
-
-    C.set_confidence = VITAL_LIB.vital_detected_object_set_confidence
-    C.set_confidence.argtypes = [DetectedObject.C_TYPE_PTR, ctypes.c_double]
-    C.set_confidence.restype = None
-
-    C.get_type = VITAL_LIB.vital_detected_object_get_type
-    C.get_type.argtypes = [DetectedObject.C_TYPE_PTR]
-    C.get_type.restype = DetectedObjectType.C_TYPE_PTR
-
-    C.set_type = VITAL_LIB.vital_detected_object_set_type
-    C.set_type.argtypes = [DetectedObject.C_TYPE_PTR, DetectedObjectType.C_TYPE_PTR]
-    C.set_type.restype = None
-
-    C.index = VITAL_LIB.vital_detected_object_index
-    C.index.argtypes = [DetectedObject.C_TYPE_PTR]
-    C.index.restype = ctypes.c_int64
-
-    C.set_index = VITAL_LIB.vital_detected_object_set_index
-    C.set_index.argtypes = [DetectedObject.C_TYPE_PTR, ctypes.c_int64]
-    C.set_index.restype = None
-
-    C.detector_name = VITAL_LIB.vital_detected_object_detector_name
-    C.detector_name.argtypes = [DetectedObject.C_TYPE_PTR]
-    C.detector_name.restype = ctypes.POINTER(ctypes.c_char)
-
-    C.detector_set_name = VITAL_LIB.vital_detected_object_detector_set_name
-    C.detector_set_name.argtypes = [DetectedObject.C_TYPE_PTR, ctypes.POINTER(ctypes.c_char)]
-    C.detector_set_name.restype = None
-    return C
 
 
 class DetectedObject (VitalObject, NiceRepr):
@@ -122,7 +67,7 @@ class DetectedObject (VitalObject, NiceRepr):
     """
     # C = define_detected_object_c_api()
 
-    def __init__(self, bbox=None, confid=0.0, tot=None, from_cptr=None):
+    def __init__(self, bbox=None, confid=0.0, tot=None, mask=None, from_cptr=None):
         """
         Create a simple detected object type
 
@@ -131,9 +76,13 @@ class DetectedObject (VitalObject, NiceRepr):
                 to create a new BoundingBox instance.
             confid (float): numeric confidence
             tot (DetectedObjectType): detected object type
+            mask (ImageContainer): indicates which pixels in the bbox are part
+                of the detection
         """
         bbox = BoundingBox.cast(bbox)
         super(DetectedObject, self).__init__(from_cptr, bbox, confid, tot)
+        if mask is not None:
+            self.set_mask(mask)
 
     def _new(self, bbox, confid, tot):
         do_new = self.VITAL_LIB.vital_detected_object_new_with_bbox
@@ -205,48 +154,32 @@ class DetectedObject (VitalObject, NiceRepr):
             return obj_type
 
     def mask(self):
-        """
+        r"""
         Ignore:
             workon_py2
             source ~/code/VIAME/build/install/setup_viame.sh
+
+            source ~/code/VIAME/build/build/src/kwiver-build/setup_KWIVER.sh
             export KWIVER_DEFAULT_LOG_LEVEL=info
+            export VITAL_LOGGER_FACTORY=vital_logger_plugin
+
             export PYTHONPATH=$HOME/code/VIAME/plugins/camtrawl:$PYTHONPATH
-            export SPROKIT_PYTHON_MODULES=kwiver.processes:viame.processes:camtrawl_processes
+            export SPROKIT_PYTHON_MODULES=kwiver.processes:viame.processes
             python -c "import vital"
+
+        CommandLine:
+            python -m vital.types.detected_object DetectedObject.mask:0
 
         Example:
             >>> from vital.types.detected_object import *
             >>> from vital.types import DetectedObject, ImageContainer, BoundingBox
+            >>> import numpy as np
             >>> self = DetectedObject(BoundingBox.from_coords(0, 0, 1, 1))
             >>> mask = (np.random.rand(7, 5) > .5).astype(np.uint8)
             >>> self.set_mask(mask)
-            >>> m = self.mask()
-            >>> # FIXME THIS DOES NOT WORK
-            >>> arr = m.asarray()
-
-        Example:
-            >>> from vital.types.detected_object import *
-            >>> from vital.types import DetectedObject, ImageContainer, BoundingBox
-            >>> self = DetectedObject(BoundingBox.from_coords(0, 0, 1, 1))
-            >>> mask = (np.random.rand(7, 5) > .5).astype(np.uint8)
-            >>> mask_ = ImageContainer.cast(mask)
-            >>> mask_.asarray()
-            >>> self.set_mask(mask_)
-            >>> m = self.mask()
-            >>> # FIXME THIS WORKS
-            >>> arr = m.asarray()
-
-        Example:
-            >>> from vital.types.detected_object import *
-            >>> from vital.types import DetectedObject, ImageContainer, BoundingBox
-            >>> self = DetectedObject(BoundingBox.from_coords(0, 0, 1, 1))
-            >>> mask = (np.random.rand(7, 5) > .5).astype(np.uint8)
-            >>> # This also doesn't work. GC IS GC-ing it up
-            >>> self.set_mask(ImageContainer.cast(mask))
-            >>> m = self.mask()
-            >>> arr = m.asarray()
+            >>> arr = self.mask().asarray()
+            >>> print('arr = {!r}'.format(arr))
         """
-        from vital.types import ImageContainer
         c_mask = VITAL_LIB.vital_detected_object_mask
         c_mask.argtypes = [DetectedObject.C_TYPE_PTR, VitalErrorHandle.C_TYPE_PTR]
         c_mask.restype = ImageContainer.C_TYPE_PTR
@@ -254,7 +187,7 @@ class DetectedObject (VitalObject, NiceRepr):
             mask_ptr = c_mask(self, eh)
         if bool(mask_ptr) is False:
             return None
-        mask = ImageContainer(from_cptr=mask_ptr)
+        mask = ImageContainer.from_cptr(mask_ptr)
         return mask
 
     def set_mask(self, mask):
@@ -280,6 +213,24 @@ class DetectedObject (VitalObject, NiceRepr):
         do_ty.argtypes = [self.C_TYPE_PTR, DetectedObjectType.C_TYPE_PTR]
         do_ty(self, ob_type)
 
+    def detector_name(self):
+        c_detector_name = VITAL_LIB.vital_detected_object_detector_name
+        c_detector_name.argtypes = [DetectedObject.C_TYPE_PTR]
+        # c_detector_name.restype = ctypes.POINTER(ctypes.c_char)
+        c_detector_name.restype = ctypes.c_char_p
+        name = c_detector_name(self)
+        # Does c_char_p take care of the free call?
+        # name = c_name.contents.value[:]
+        # free_void_ptr(c_name)
+        return name
+
+    def detector_set_name(self, name):
+        c_detector_set_name = VITAL_LIB.vital_detected_object_detector_set_name
+        c_detector_set_name.argtypes = [DetectedObject.C_TYPE_PTR, ctypes.POINTER(ctypes.c_char)]
+        c_detector_set_name.restype = None
+        c_name = ctypes.create_string_buffer(name)
+        c_detector_set_name(self, c_name)
+
     # --- Python convineince functions ---
 
     def __nice__(self):
@@ -288,11 +239,23 @@ class DetectedObject (VitalObject, NiceRepr):
             >>> from vital.types import DetectedObject
             >>> self = DetectedObject([(0, 0), (5, 10)])
             >>> str(self)
-            <DetectedObject([0.0, 0.0, 5.0, 10.0], ?type?, 0.0)>
+            <DetectedObject([0.0, 0.0, 5.0, 10.0], 0.0)>
         """
         conf = self.confidence()
         # FIXME: get types working correctly
         # name = self.type().most_likely_class()
-        name = '?type?'
+        # name = '?type?'
         bbox = self.bounding_box().coords
-        return '{}, {}, {}'.format(bbox, name, conf)
+        return '{}, {}'.format(bbox, conf)
+        # return '{}, {}, {}'.format(bbox, name, conf)
+
+
+if __name__ == '__main__':
+    r"""
+    CommandLine:
+        python -m vital.types.detected_object
+    """
+    import ubelt as ub
+    ub.doctest_package()
+    # import pytest
+    # pytest.main([__file__, '--doctest-modules'])

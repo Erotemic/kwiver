@@ -1,6 +1,5 @@
 from os.path import expanduser, join
 import re
-import utool as ut
 import ubelt as ub
 from c_patterns import CPatternMatch, CArgspec, CArg, CType
 from c_patterns import named, VARNAME
@@ -31,7 +30,7 @@ class VitalRegistry(object):
 
     @staticmethod
     def get_sptr_cachename(classname):
-        default = '_' + classname.upper() + 'SPTR_CACHE'
+        default = '_' + classname.upper() + '_SPTR_CACHE'
         base_cachename = VitalRegistry.sptr_caches.get(classname, default)
         return 'kwiver::vital_c::' + base_cachename
 
@@ -53,12 +52,7 @@ class VitalRegistry(object):
         'bounding_box_d',
     }
 
-    # smart_pointer_types = {
-    #     'vital_detected_object_t',
-    # }
 
-
-@ut.reloadable_class
 class VitalCArg(CArg):
 
     def __init__(carg, *args, **kwargs):
@@ -68,6 +62,14 @@ class VitalCArg(CArg):
 
     def is_smart(carg):
         return carg.type.data_base.endswith('_sptr')
+
+    def smart_type(carg):
+        if carg.is_smart():
+            sptr_type = carg.type.data_base.split('::')[-1]
+            pointed_type = sptr_type[:-5]
+            return pointed_type
+        else:
+            return None
 
     def c_spec(carg):
         argtype = carg.c_type()
@@ -122,9 +124,10 @@ class VitalCArg(CArg):
             # text = '{} {} = {};'.format(carg.type, cxx_name, c_name)
             text = BLANK_LINE_PLACEHOLDER
         elif carg.is_smart():
-            pointed_type = data_base[:-5]
+            pointed_type = carg.smart_type()
 
             if pointed_type in VitalRegistry.copy_on_set:
+                # I dont think this is used anymore (or at least should be)
                 fmtdict['cxx_type1'] = CType(cxx_ns + pointed_type)
                 fmtdict['cxx_type2'] = fmtdict['cxx_type1'].addr()
                 # Construct a new smart pointer
@@ -205,10 +208,9 @@ class VitalCArg(CArg):
             # )
             text = BLANK_LINE_PLACEHOLDER
         elif carg.is_smart():
-            sptr_type = carg.type.data_base.split('::')[-1]
-            classname = sptr_type[:-5]
+            pointed_type = carg.smart_type()
             fmtdict.update({
-                'c_type': 'vital_{}_t*'.format(classname)
+                'c_type': 'vital_{}_t*'.format(pointed_type)
             })
             text = ub.codeblock(
                 '''
@@ -290,6 +292,7 @@ class VitalCArg(CArg):
             else:
                 c_class = carg.vital_classname()
                 if c_class is not None:
+                    import utool as ut
                     py_class = ut.to_camel_case(c_class)
                     assert ptr_degree > 0
                     ctype = py_class + '.C_TYPE_PTR'
@@ -320,6 +323,7 @@ def inspect_existing_bindings(classname):
     cxx_funcnames = {cxx_funcname(info) for info in cxxtype.cxx_method_infos}
     bound_funcnames = {cxx_funcname(info) for info in cbind.cxx_method_infos}
 
+    import utool as ut
     print('cxx_funcnames = {}'.format(ut.repr4(sorted(cxx_funcnames))))
     print('bound_funcnames = {}'.format(ut.repr4(sorted(bound_funcnames))))
 
@@ -358,6 +362,7 @@ class VitalTypeIntrospectCxx(object):
     CommandLine:
         export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/VIAME/packages/kwiver/vital/bindings
         python -m c_introspect VitalTypeIntrospectCxx:0 --class=detected_object
+        python -m c_introspect VitalTypeIntrospectCxx:0 --class=detected_object --func=mask
 
     Example:
         >>> import sys
@@ -365,9 +370,10 @@ class VitalTypeIntrospectCxx(object):
         >>> from c_introspect import *
         >>> #classname = 'oriented_bounding_box'
         >>> classname = ub.argval('--class', default='detected_object')
+        >>> funcnames = ub.argval('--func', default=None)
         >>> self = VitalTypeIntrospectCxx(classname)
         >>> self.parse_cxx_class_header()
-        >>> text = self.dump_c_bindings()
+        >>> text = self.dump_c_bindings(funcnames)
         >>> print(ub.highlight_code(text, 'cpp'))
     """
     def __init__(self, classname):
@@ -387,7 +393,7 @@ class VitalTypeIntrospectCxx(object):
         self.cxx_method_infos = CPatternMatch.func_declarations(text, self.classname)
         self.cxx_rel_includes = CPatternMatch.relative_includes(text)
 
-    def dump_c_bindings(self):
+    def dump_c_bindings(self, funcnames=None):
         fmtdict = {
             'c_type': 'vital_{classname}_t'.format(classname=self.classname),
             'copyright': fmt_templates.COPYRIGHT,
@@ -400,39 +406,31 @@ class VitalTypeIntrospectCxx(object):
         parts = [sptr_header]
         parts = []
 
-        if self.cxx_constructor_infos:
-            parts.append(ut.codeblock(
+        if funcnames is not None:
+            funcnames = set([p.strip()
+                             for p in funcnames.split(',') if p.strip()])
+
+        init_parts = []
+        for n, info in enumerate(self.cxx_constructor_infos):
+            if funcnames is None:
+                text = self.autogen_vital_init_c(n, info, fmtdict)
+                init_parts.append(text)
+        if init_parts:
+            parts += [ub.codeblock(
                 '''
                 // --- CONSTRUCTORS ---
-                '''))
+                ''')] + init_parts
 
-        for n, info in enumerate(self.cxx_constructor_infos):
-            text = self.autogen_vital_init_c(n, info, fmtdict)
-            parts.append(text)
-
-        if self.cxx_constructor_infos:
-            parts.append(ut.codeblock(
+        method_parts = []
+        for n, info in enumerate(self.cxx_method_infos):
+            if funcnames is None or info['cxx_funcname'] in funcnames:
+                text = self.autogen_vital_method_c(info, fmtdict)
+                method_parts.append(text)
+        if method_parts:
+            parts += [ub.codeblock(
                 '''
                 // --- METHODS ---
-                '''))
-
-        only_funcnames = {
-            # 'bounding_box',
-            # 'set_bounding_box',
-            # 'set_detector_name',
-            # 'detector_name',
-            # 'type',
-            # 'set_type',
-            'mask',
-            'set_mask',
-            # 'confidence',
-            # 'set_confidence',
-        }
-
-        for n, info in enumerate(self.cxx_method_infos):
-            if only_funcnames is None or info['cxx_funcname'] in only_funcnames:
-                text = self.autogen_vital_method_c(info, fmtdict)
-                parts.append(text)
+                ''')] + method_parts
 
         # print(text)
         text = '\n\n\n'.join(parts)
@@ -469,29 +467,21 @@ class VitalTypeIntrospectCxx(object):
         c_funcname = 'vital_{classname}_from_{init_name}'.format(
             classname=self.classname, init_name=init_name)
 
-        fmtdict['cxx_type'] = 'kwiver::vital::' + self.classname
+        # fmtdict['cxx_type'] = 'kwiver::vital::' + self.classname
 
-        call_cxx_func_fmt = ub.codeblock(
-            '''
-            auto _retvar = std::make_shared< {cxx_type} >( {cxx_callargs} );
-            {SPTR_CACHE}.store( _retvar );
-            '''
-        )
-
-        fmtdict['SPTR_CACHE'] = VitalRegistry.get_sptr_cachename(self.classname)
         ret_type = CType(info['return_type'])
         info.info['return_type'] = ret_type.data_base + '_sptr'
 
         text = self.autogen_vital_method_c(
             info, fmtdict, c_funcname=c_funcname,
-            call_cxx_func_fmt=call_cxx_func_fmt, needs_self=False
+            is_constructor=True, needs_self=False
         )
         return text
 
     def autogen_vital_method_c(self, info, fmtdict, c_funcname=None,
-                               call_cxx_func_fmt=None, needs_self=True):
+                               is_constructor=False, needs_self=True):
         # TODO: handle outvars
-        c_bind_method = ut.codeblock(
+        c_bind_method = ub.codeblock(
             '''
             {c_return_type}
             {c_funcname}( {c_argspec} )
@@ -558,20 +548,38 @@ class VitalTypeIntrospectCxx(object):
             return_c_var = 'return retvar;'
             return_error = 'return NULL;'
 
-        if call_cxx_func_fmt is None:
-            call_cxx_func = '_self->{cxx_funcname}({cxx_callargs});'.format(**fmtdict)
-            if not returns_none:
-                cxx_ret_name = return_arg.cxx_name()
-                call_cxx_func = 'auto ' + cxx_ret_name + ' = ' + call_cxx_func
+        # if call_cxx_func_fmt is None:
+        if is_constructor:
+            cxx_ns = 'kwiver::vital::'
+            fmtdict['cxx_pointed_type'] = cxx_ns + str(return_arg.smart_type())
+            call_cxx_func = 'std::make_shared< {cxx_pointed_type} >( {cxx_callargs} );'.format(**fmtdict)
         else:
-            call_cxx_func = call_cxx_func_fmt.format(**fmtdict)
+            call_cxx_func = '_self->{cxx_funcname}({cxx_callargs});'.format(**fmtdict)
+        if not returns_none:
+            cxx_ret_name = return_arg.cxx_name()
+            cxx_ret_type = 'auto'
+            cxx_ns = 'kwiver::vital::'
+            cxx_ret_type = cxx_ns + str(return_arg.type)
+            call_cxx_func = '{} {} = {}'.format(cxx_ret_type, cxx_ret_name,
+                                                call_cxx_func)
+            if return_arg.is_smart():
+                # Make sure the external refcount is increased whenever we
+                # return a smart pointer from the C-API.
+                pointed_type = return_arg.smart_type()
+                SPTR_CACHE = VitalRegistry.get_sptr_cachename(
+                    pointed_type)
+                call_cxx_func += '\n{SPTR_CACHE}.store( {cxx_name} );'.format(
+                    SPTR_CACHE=SPTR_CACHE, cxx_name=cxx_ret_name
+                )
+        # else:
+        #     call_cxx_func = call_cxx_func_fmt.format(**fmtdict)
 
         method_body = c_bind_method_body.format(
             convert_return=convert_return,
             return_c_var=return_c_var,
             call_cxx_func=call_cxx_func,
             convert_cxx_to_c=convert_cxx_to_c,
-            **fmtdict,
+            **fmtdict
         )
 
         text = c_bind_method.format(
@@ -579,7 +587,7 @@ class VitalTypeIntrospectCxx(object):
             c_return_type=return_arg.c_type(),
             return_error=return_error,
             method_body=block_indent(method_body, 4),
-            **fmtdict,
+            **fmtdict
         )
         return self._postprocess(text)
 
@@ -724,13 +732,9 @@ class VitalTypeIntrospectCBind(object):
         print(autogen_text)
 
         # autogen_fpath = join(self.c_binding_base, self.classname + '.h.autogen')
-        autogen_fpath = join(self.c_binding_base, self.classname + '.h')
-
-        # import utool as ut
-        # ut.dump_autogen_code(autogen_fpath, autogen_text, codetype='c', show_diff=True)
-        # ut.dump_autogen_code(autogen_fpath, autogen_text, codetype='c', dowrite=True)
-
-        ub.writeto(autogen_fpath, autogen_text)
+        # autogen_fpath = join(self.c_binding_base, self.classname + '.h')
+        print(autogen_text)
+        # ub.writeto(autogen_fpath, autogen_text)
 
     def dump_python_ctypes(self):
         """
@@ -768,12 +772,15 @@ class VitalTypeIntrospectCBind(object):
             argtypes = '[' + cargs.format_typespec_python() + ']'
             # print('argtypes = {!r}'.format(argtypes))
 
+            # prefix = 'C.'
+            prefix = 'c_'
             block = ub.codeblock(
                 r'''
-                C.{suffix} = VITAL_LIB.{cxx_funcname}
-                C.{suffix}.argtypes = {argtypes}
-                C.{suffix}.restype = {restype}
+                {prefix}{suffix} = VITAL_LIB.{cxx_funcname}
+                {prefix}{suffix}.argtypes = {argtypes}
+                {prefix}{suffix}.restype = {restype}
                 ''').format(
+                    prefix=prefix,
                     suffix=suffix,
                     cxx_funcname=cxx_funcname,
                     argtypes=argtypes,
@@ -786,19 +793,6 @@ class VitalTypeIntrospectCBind(object):
         py_c_api += '\n    C = {}_c_api()'.format(self.classname)
         py_c_api += '\n' + ub.indent('\n\n'.join(blocks))
         py_c_api += '\n    return C'
-
-        # import autopep8
-        # import utool as ut
-        # arglist = ['--max-line-length', '79']
-        # arglist.extend(['-a'])
-        # # arglist.extend(['-a', '-a'])
-        # arglist.extend(['--experimental'])
-        # arglist.extend([''])
-        # autopep8_options = autopep8.parse_args(arglist)
-        # fixed_codeblock = autopep8.fix_code(py_c_api, options=autopep8_options)
-        # print(fixed_codeblock)
-
-        # ut.copy_text_to_clipboard(py_c_api)
         print(py_c_api)
 
 if __name__ == '__main__':

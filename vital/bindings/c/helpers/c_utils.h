@@ -292,6 +292,8 @@ public:
       // Only finally erase cache entry when store references reaches 0
       if( ref_count_cache_[ptr] <= 0 )
       {
+        // Note: This cache only manages external usage. The object itself will
+        // not be destroyed if the shared pointer is referenced internally.
         cache_.erase(c_it);
         ref_count_cache_.erase(ptr);
       }
@@ -303,6 +305,33 @@ public:
   void erase( C_t const *ptr )
   {
     return this->erase( reinterpret_cast< vital_t const * >( ptr ) );
+  }
+
+  // ------------------------------------------------------------------
+  /// Check the refcount of a shared pointer
+  size_t refcount( vital_t const *ptr )
+  {
+    if( ptr == NULL )
+    {
+      std::ostringstream ss;
+      ss << get_log_prefix(ptr) << ": Cannot check refcount of NULL pointer";
+      throw NullPointerException(ss.str());
+    }
+
+    typename cache_t::iterator c_it = cache_.find( ptr );
+    if( c_it != cache_.end() )
+    {
+      return ref_count_cache_[ptr];
+    }
+    else
+    {
+      return 0;
+    }
+  }
+
+  size_t refcount( C_t const *ptr )
+  {
+    return this->refcount( reinterpret_cast< vital_t const * >( ptr ) );
   }
 
 private:

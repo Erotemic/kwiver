@@ -98,8 +98,8 @@ VITAL_C_EXPORT
 char* vital_detected_object_detector_name(vital_detected_object_t * obj);
 
 VITAL_C_EXPORT
-void vital_detected_object_detector_setname(vital_detected_object_t * obj,
-                                            char* name );
+void vital_detected_object_detector_set_name(vital_detected_object_t * obj,
+                                             char* name );
 
 VITAL_C_EXPORT
 vital_image_container_t* vital_detected_object_mask(vital_detected_object_t * obj, vital_error_handle_t* eh);

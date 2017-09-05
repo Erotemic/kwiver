@@ -41,13 +41,14 @@ from .color import RGBColor
 from .covariance import Covariance
 from .descriptor import Descriptor
 from .descriptor_set import DescriptorSet
-from .detected_object_type import DetectedObjectType
-from .detected_object import DetectedObject
-from .detected_object_set import DetectedObjectSet
 from .eigen import EigenArray
 from .image import Image
 from .image_container import ImageContainer
 from .rotation import Rotation
+
+from .detected_object_type import DetectedObjectType
+from .detected_object import DetectedObject
+from .detected_object_set import DetectedObjectSet
 
 # Requires EigenArray
 from .homography import Homography

@@ -17,7 +17,7 @@ import ubelt as ub
 import copy
 
 NATIVE_TYPES = {
-    'double', 'int', 'float', 'bool', 'char', 'int64_t'
+    'double', 'int', 'float', 'bool', 'char', 'int64_t', 'uint64_t'
 }
 
 C_SINGLE_COMMENT = '//.*'

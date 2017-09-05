@@ -215,6 +215,7 @@ vital_image_container_t* vital_detected_object_mask(vital_detected_object_t * ob
     kwiver::vital::detected_object_sptr _self = kwiver::vital_c::DOBJ_SPTR_CACHE.get( obj );
     kwiver::vital::image_container_sptr _retvar = _self->mask();
     vital_image_container_t* retvar = reinterpret_cast< vital_image_container_t* >( _retvar.get() );
+    kwiver::vital_c::IMGC_SPTR_CACHE.store( _retvar );
     return retvar;
   );
   return NULL;
