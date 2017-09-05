@@ -148,6 +148,10 @@ class ModuleLoader(Loader):
                             break
 
     def _findPluginModules(self, namespace):
+        if not hasattr(sys, 'argv'):
+            # boost.python does not implement sys.argv
+            sys.argv = []
+
         for filepath in self._findPluginFilePaths(namespace):
             path_segments = list(filepath.split(os.path.sep))
             path_segments = [p for p in path_segments if p]
