@@ -46,6 +46,10 @@ class ImageContainer (VitalObject):
     """
     vital::image_container interface class
 
+    SeeAlso:
+        ../../../c/types/image_container.h
+        ../../types/image_container.h
+
     Example:
         >>> from vital.types.image_container import *
         >>> import numpy as np
@@ -71,6 +75,11 @@ class ImageContainer (VitalObject):
         if data is None or isinstance(data, cls):
             return super(ImageContainer, cls).cast(data)
         # See if the data was a raw image
+        # FIXME: when an ndarray is cast to an image, then
+        # this vital Image is created, but then immediately loses all
+        # references and is destroyed (which causes the underlying C++ destroy
+        # method to be called). Can we prevent this for the life of this Image
+        # container object?
         image = Image.cast(data)
         return ImageContainer(image=image)
 
@@ -154,7 +163,7 @@ class ImageContainer (VitalObject):
         img_ptr = ic_getimg(self)
         if bool(img_ptr) is False:
             return None
-        return Image(from_cptr=img_ptr)
+        return Image.from_cptr(img_ptr)
 
     def asarray(self):
         """

@@ -87,6 +87,11 @@ def _pil_image_from_bytes(mode, size, data, decoder_name='raw', *args):
 class Image (VitalObject):
     """
     vital::image interface class
+
+    SeeAlso:
+        ../../../c/types/image.h
+        ../../types/image.h
+
     """
     PIXEL_UNKNOWN = 0
     PIXEL_UNSIGNED = 1
