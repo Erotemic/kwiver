@@ -45,6 +45,15 @@ from vital.util import VitalErrorHandle
 class ImageContainer (VitalObject):
     """
     vital::image_container interface class
+
+    Example:
+        >>> from vital.types.image_container import *
+        >>> import numpy as np
+        >>> arr = (np.random.rand(7, 5) * 255).astype(np.uint8)
+        >>> img_container = ImageContainer.cast(arr)
+        >>> img = img_container.get_image()
+        >>> arr2 = img.get_numpy_array()
+        >>> assert np.all(arr2 == arr)
     """
 
     def __init__(self, image=None, from_cptr=None):
@@ -57,10 +66,18 @@ class ImageContainer (VitalObject):
         """
         super(ImageContainer, self).__init__(from_cptr, image)
 
+    @classmethod
+    def cast(cls, data):
+        if data is None or isinstance(data, cls):
+            return super(ImageContainer, cls).cast(data)
+        # See if the data was a raw image
+        image = Image.cast(data)
+        return ImageContainer(image=image)
+
     def _new(self, image):
         """
         :param image: Image to contain
-        :type image: vital.types.Image
+        :type image: vital.types.Imagimge
         """
         if image is None:
             raise ValueError("No vital.types.Image given to contain.")
@@ -134,4 +151,22 @@ class ImageContainer (VitalObject):
         ic_getimg = self.VITAL_LIB['vital_image_container_get_image']
         ic_getimg.argtypes = [self.C_TYPE_PTR]
         ic_getimg.restype = Image.C_TYPE_PTR
-        return Image(from_cptr=ic_getimg(self))
+        img_ptr = ic_getimg(self)
+        if bool(img_ptr) is False:
+            return None
+        return Image(from_cptr=img_ptr)
+
+    def asarray(self):
+        """
+        Return a new pointer the to contained image. This instance shares the
+        same internal memory as the contained image.
+
+        :return: New ImageContainer instance
+        :rtype: ImageContainer
+
+        """
+        img = self.get_image()
+        if img is None:
+            return None
+        else:
+            return img.get_numpy_array()

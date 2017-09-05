@@ -36,14 +36,13 @@ Interface to VITAL detected_object class.
 import ctypes
 
 from vital.util import VitalObject
-from vital.util import VITAL_LIB
+from vital.util.VitalObject import VITAL_LIB
 from vital.util import VitalErrorHandle
 from vital.util import free_void_ptr
+from vital.util.mixins import NiceRepr
 
 from vital.types import BoundingBox
 from vital.types import DetectedObjectType
-from vital.types import ImageContainer
-from vital.types.mixins import NiceRepr
 
 
 def define_detected_object_c_api():
@@ -52,6 +51,7 @@ def define_detected_object_c_api():
     CommandLine:
         python -m c_introspect VitalTypeIntrospectCBind.dump_python_ctypes:0 --class=detected_object
     """
+    from vital.types import ImageContainer
     class detected_object_c_api(object):
         pass
     C = detected_object_c_api()
@@ -106,14 +106,6 @@ def define_detected_object_c_api():
     C.detector_set_name = VITAL_LIB.vital_detected_object_detector_set_name
     C.detector_set_name.argtypes = [DetectedObject.C_TYPE_PTR, ctypes.POINTER(ctypes.c_char)]
     C.detector_set_name.restype = None
-
-    C.mask = VITAL_LIB.vital_detected_object_mask
-    C.mask.argtypes = [DetectedObject.C_TYPE_PTR, VitalErrorHandle.C_TYPE_PTR]
-    C.mask.restype = ImageContainer.C_TYPE_PTR
-
-    C.set_mask = VITAL_LIB.vital_detected_object_set_mask
-    C.set_mask.argtypes = [DetectedObject.C_TYPE_PTR, ImageContainer.C_TYPE_PTR, VitalErrorHandle.C_TYPE_PTR]
-    C.set_mask.restype = None
     return C
 
 
@@ -128,7 +120,7 @@ class DetectedObject (VitalObject, NiceRepr):
     TODO:
         add mask getter / setter
     """
-    C = define_detected_object_c_api()
+    # C = define_detected_object_c_api()
 
     def __init__(self, bbox=None, confid=0.0, tot=None, from_cptr=None):
         """
@@ -220,17 +212,59 @@ class DetectedObject (VitalObject, NiceRepr):
             export KWIVER_DEFAULT_LOG_LEVEL=info
             export PYTHONPATH=$HOME/code/VIAME/plugins/camtrawl:$PYTHONPATH
             export SPROKIT_PYTHON_MODULES=kwiver.processes:viame.processes:camtrawl_processes
+            python -c "import vital"
 
         Example:
-            >>> from vital.types import DetectedObject
-            >>> self = DetectedObject([0, 0, 1, 1])
+            >>> from vital.types.detected_object import *
+            >>> from vital.types import DetectedObject, ImageContainer, BoundingBox
+            >>> self = DetectedObject(BoundingBox.from_coords(0, 0, 1, 1))
+            >>> mask = (np.random.rand(7, 5) > .5).astype(np.uint8)
+            >>> self.set_mask(mask)
+            >>> m = self.mask()
+            >>> # FIXME THIS DOES NOT WORK
+            >>> arr = m.asarray()
+
+        Example:
+            >>> from vital.types.detected_object import *
+            >>> from vital.types import DetectedObject, ImageContainer, BoundingBox
+            >>> self = DetectedObject(BoundingBox.from_coords(0, 0, 1, 1))
+            >>> mask = (np.random.rand(7, 5) > .5).astype(np.uint8)
+            >>> mask_ = ImageContainer.cast(mask)
+            >>> mask_.asarray()
+            >>> self.set_mask(mask_)
+            >>> m = self.mask()
+            >>> # FIXME THIS WORKS
+            >>> arr = m.asarray()
+
+        Example:
+            >>> from vital.types.detected_object import *
+            >>> from vital.types import DetectedObject, ImageContainer, BoundingBox
+            >>> self = DetectedObject(BoundingBox.from_coords(0, 0, 1, 1))
+            >>> mask = (np.random.rand(7, 5) > .5).astype(np.uint8)
+            >>> # This also doesn't work. GC IS GC-ing it up
+            >>> self.set_mask(ImageContainer.cast(mask))
+            >>> m = self.mask()
+            >>> arr = m.asarray()
         """
+        from vital.types import ImageContainer
+        c_mask = VITAL_LIB.vital_detected_object_mask
+        c_mask.argtypes = [DetectedObject.C_TYPE_PTR, VitalErrorHandle.C_TYPE_PTR]
+        c_mask.restype = ImageContainer.C_TYPE_PTR
         with VitalErrorHandle() as eh:
-            return self.C.mask(eh)
+            mask_ptr = c_mask(self, eh)
+        if bool(mask_ptr) is False:
+            return None
+        mask = ImageContainer(from_cptr=mask_ptr)
+        return mask
 
     def set_mask(self, mask):
+        from vital.types import ImageContainer
+        c_set_mask = VITAL_LIB.vital_detected_object_set_mask
+        c_set_mask.argtypes = [DetectedObject.C_TYPE_PTR, ImageContainer.C_TYPE_PTR, VitalErrorHandle.C_TYPE_PTR]
+        c_set_mask.restype = None
+        mask_ = ImageContainer.cast(mask)
         with VitalErrorHandle() as eh:
-            self.C.set_mask(mask, eh)
+            c_set_mask(self, mask_, eh)
 
     def set_type(self, ob_type):
         """

@@ -32,6 +32,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Base class for all VITAL Python interface classes
 
+TODO: this filename should be changed to vital_object
+
 """
 
 import abc
@@ -236,7 +238,7 @@ class VitalObject (object):
 
     def __nonzero__(self):
         """ bool() operator for 2.x """
-        return bool(self.c_pointer)
+        return self.__bool__()
 
     def __bool__(self):
         """ bool() operator for 3.x """
