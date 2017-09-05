@@ -35,6 +35,7 @@ Interface to the VITAL descriptor_set class.
 """
 import ctypes
 
+from six.moves import range
 from vital.types import Descriptor
 from vital.util import VitalObject, free_void_ptr
 
@@ -113,7 +114,7 @@ class DescriptorSet (VitalObject):
         d_list = []
         for i in range(out_d_array_size.value):
             cptr = Descriptor.c_ptr_type()(out_d_array[i].contents)
-            d_list.append(Descriptor(from_cptr = cptr))
+            d_list.append(Descriptor(from_cptr=cptr))
         free_void_ptr(out_d_array)
 
         return d_list
