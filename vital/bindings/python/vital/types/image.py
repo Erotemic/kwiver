@@ -36,8 +36,9 @@ Interface to VITAL image class.
 # -*- coding: utf-8 -*-
 
 import ctypes
-import numpy
+import numpy as np
 from vital.util import VitalObject
+from PIL import Image as PILImage
 
 
 def _pil_image_to_bytes(p_img):
@@ -77,11 +78,10 @@ def _pil_image_from_bytes(mode, size, data, decoder_name='raw', *args):
     :returns: An :py:class:`~PIL.Image.Image` object.
 
     """
-    import PIL.Image
-    if hasattr(PIL.Image, 'frombytes'):
-        return PIL.Image.frombytes(mode, size, data, decoder_name, *args)
+    if hasattr(PILImage, 'frombytes'):
+        return PILImage.frombytes(mode, size, data, decoder_name, *args)
     else:
-        return PIL.Image.fromstring(mode, size, data, decoder_name, *args)
+        return PILImage.fromstring(mode, size, data, decoder_name, *args)
 
 
 class Image (VitalObject):
@@ -93,6 +93,30 @@ class Image (VitalObject):
     PIXEL_SIGNED = 2
     PIXEL_FLOAT = 3
     PIXEL_BOOL = 4
+
+    @classmethod
+    def cast(cls, data):
+        if isinstance(data, np.ndarray):
+            return cls.from_numpy(data)
+        elif isinstance(data, PILImage):
+            return cls.from_pil(data)
+        elif isinstance(data, Image):
+            return cls.from_image(data)
+        return super(Image, cls).cast(data)
+
+    @classmethod
+    def from_numpy(cls, arr):
+        """
+        Example:
+            >>> from vital.types.image import *
+            >>> arr = (np.random.rand(7, 5) * 255).astype(np.uint8)
+            >>> img = Image.from_numpy(arr)
+            >>> assert img.width() == 5
+            >>> assert img.height() == 7
+            >>> assert img.size() == 35
+        """
+        pil_img = PILImage.fromarray(arr)
+        return cls.from_pil(pil_img)
 
     @classmethod
     def from_image(cls, other_image):
@@ -145,7 +169,7 @@ class Image (VitalObject):
             img_d_step = 0
             img_pix_num_bytes = 1
             img_pix_type = cls.PIXEL_UNSIGNED
-        elif mode == "RGB": # 8-bit RGB
+        elif mode == "RGB":  # 8-bit RGB
             img_depth = 3
             img_w_step = 3
             img_h_step = img_width * 3
@@ -192,9 +216,6 @@ class Image (VitalObject):
                                             img_pix_type, img_pix_num_bytes))
         # return a deep copy of the image into memory managed by the image object
         return Image().copy_from(vital_img)
-
-
-    # TODO: Need to add class-method from_numpy( cls, numpy_arry )
 
     def __init__(self, width=None, height=None, depth=1, interleave=False,
                  pix_type=PIXEL_UNSIGNED, pix_num_bytes=1,
@@ -261,7 +282,7 @@ class Image (VitalObject):
         elif pt == self.PIXEL_BOOL and nb == 1:
             return "bool"
         if name:
-            return name + str(nb*8)
+            return name + str(nb * 8)
         return None
 
     def __getitem__(self, tup):
@@ -272,16 +293,16 @@ class Image (VitalObject):
             raise RuntimeError("image does not contain known pixel type")
         if len(tup) == 2:
             i, j = tup
-            img_get_pixel = getattr(self.VITAL_LIB, "vital_image_get_pixel2_"+typename)
+            img_get_pixel = getattr(self.VITAL_LIB, "vital_image_get_pixel2_" + typename)
             #img_get_pixel.argtypes = [ctypes.c_uint32, ctypes.c_uint32]
-            img_get_pixel.restype = getattr(ctypes, "c_"+typename)
-            return img_get_pixel(self,i,j)
+            img_get_pixel.restype = getattr(ctypes, "c_" + typename)
+            return img_get_pixel(self, i, j)
         elif len(tup) == 3:
             i, j, k = tup
-            img_get_pixel = getattr(self.VITAL_LIB, "vital_image_get_pixel3_"+typename)
-            img_get_pixel.restype = getattr(ctypes, "c_"+typename)
+            img_get_pixel = getattr(self.VITAL_LIB, "vital_image_get_pixel3_" + typename)
+            img_get_pixel.restype = getattr(ctypes, "c_" + typename)
             return img_get_pixel(self, i, j, k)
-        raise IndexError("expected 2 or 3 indices, got "+str(len(tup)))
+        raise IndexError("expected 2 or 3 indices, got " + str(len(tup)))
 
     def size(self):
         """ Get the number of bytes allocated in the given image
@@ -382,7 +403,6 @@ class Image (VitalObject):
         # inverse of __eq__ result.
         return not (self == other)
 
-
     # ------------------------------------------------------------------
     # Make a utility method not a member
     # or a derived class :: pil_image_converter
@@ -456,9 +476,10 @@ class Image (VitalObject):
         :rtype: numpy array
         """
         pil_image = self.get_pil_image()
-        numpy_array = numpy.array(pil_image)
+        numpy_array = np.array(pil_image)
         return numpy_array
 
+    asarray = get_numpy_array
 
     # ------------------------------------------------------------------
     # return image as an ocv iamge

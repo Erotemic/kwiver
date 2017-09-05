@@ -35,6 +35,7 @@ vital.util module
 """
 import ctypes
 
+from .VitalObject import VITAL_LIB
 from .VitalObject import VitalObject, OpaqueTypeCache
 from .error_handle import VitalErrorHandle
 

@@ -36,7 +36,7 @@ Interface to VITAL image_container class.
 import ctypes
 from vital.util import VitalObject
 from vital.util import VitalErrorHandle
-from vital.types.mixins import NiceRepr
+from vital.util.mixins import NiceRepr
 from vital.util import free_void_ptr
 
 VITAL_LIB = VitalObject.VITAL_LIB
