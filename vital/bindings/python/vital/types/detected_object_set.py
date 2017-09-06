@@ -45,6 +45,11 @@ from vital.util.mixins import NiceRepr
 class DetectedObjectSet (VitalObject, NiceRepr):
     """
     vital::detected_object_set interface class
+
+    SeeAlso:
+        ../../../c/types/detected_object_set.h
+        ../../types/detected_object_set.h
+
     """
 
     def __init__(self, dobjs=None, count=None, from_cptr=None):
@@ -82,6 +87,10 @@ class DetectedObjectSet (VitalObject, NiceRepr):
         dos_size.argtypes = [self.C_TYPE_PTR]
         dos_size.restype = ctypes.c_size_t
         return dos_size(self)
+
+    def __iter__(self):
+        for obj in self.select(0):
+            yield obj
 
     def select(self, one=0.0, two=None):
         """
@@ -127,7 +136,7 @@ class DetectedObjectSet (VitalObject, NiceRepr):
         output = []
         for i in range( length.value ):
             cptr = DetectedObject.c_ptr_type()(c_output[i].contents)
-            output.append( DetectedObject(from_cptr = cptr) )
+            output.append( DetectedObject.from_cptr(cptr) )
 
         free_void_ptr( c_output )
         return output

@@ -328,3 +328,30 @@ void vital_camera_write_krtd_file( vital_camera_t const *cam,
     kwiver::vital::write_krtd_file( *m_cam, filepath );
   );
 }
+
+
+/// Adopt existing sptr
+vital_camera_t*
+vital_camera_from_sptr( void* sptr, vital_error_handle_t* eh=NULL)
+{
+  STANDARD_CATCH(
+    "vital_camera_from_sptr", eh,
+
+    kwiver::vital::camera_sptr _sptr = *reinterpret_cast< kwiver::vital::camera_sptr* >(sptr);
+    kwiver::vital_c::CAMERA_SPTR_CACHE.store( _sptr );
+    return reinterpret_cast<vital_camera_t*>( _sptr.get() );
+  );
+  return 0;
+}
+
+/// Get the vital::track_set shared pointer for a handle.
+kwiver::vital::camera_sptr
+vital_track_set_to_sptr( vital_camera_t* self, vital_error_handle_t* eh )
+{
+  STANDARD_CATCH(
+    "vital_track_set_to_sptr", eh,
+    // Return the cached shared pointer.
+    return vital_c::CAMERA_SPTR_CACHE.get( self );
+  );
+  return kwiver::vital::camera_sptr();
+}

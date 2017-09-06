@@ -37,12 +37,10 @@ import ctypes
 
 import numpy
 
-from vital.types import (
-    CameraIntrinsics,
-    Covariance,
-    EigenArray,
-    Rotation,
-)
+from vital.types.covariance import Covariance
+from vital.types.eigen import EigenArray
+from vital.types.rotation import Rotation
+from vital.types.camera_intrinsics import CameraIntrinsics
 from vital.util import VitalObject, VitalErrorHandle
 
 
@@ -83,7 +81,7 @@ class Camera (VitalObject):
         """
         Create a new camera instance.
 
-        :param center: Optional center to initialize to. This is the center of 
+        :param center: Optional center to initialize to. This is the center of
             projection of the camera in the world coordinate system. Default is
             (0, 0, 0).
         :type center: EigenArray | Numpy array
@@ -151,23 +149,22 @@ class Camera (VitalObject):
 
     def __ne__(self, other):
         return not (self == other)
-    
+
     def __str__(self):
         s = numpy.array2string(self.as_matrix(), separator=',')
-        s = s[1:-1] # remove first and last []
+        s = s[1:-1]  # remove first and last []
         # prefix lines based on the length of the class name
         l = s.splitlines()
-        l[0] = ' '*9 + '[' + l[0][2:-1]
+        l[0] = ' ' * 9 + '[' + l[0][2:-1]
         l[1] = 'K(R|T) = ' + '[' + l[1][3:-1]
-        l[2] = ' '*9 + '[' + l[2][3:]
+        l[2] = ' ' * 9 + '[' + l[2][3:]
         l.append(str(self.intrinsics))
         return '\n'.join(l)
-    
-    
+
     def __repr__(self):
         cls_name = self.__class__.__name__
-        return ''.join([cls_name,'\n',str(self)])
-    
+        return ''.join([cls_name, '\n', str(self)])
+
     def clone(self):
         """
         :return: Return a new instance that is the clone of this one.

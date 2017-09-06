@@ -33,7 +33,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Interface to VITAL camera_intrinsics objects
 
 """
-import collections
+import collections  # NOQA
 import ctypes
 
 import numpy
@@ -43,6 +43,12 @@ from vital.util import VitalErrorHandle, VitalObject
 
 
 class CameraIntrinsics (VitalObject):
+    """
+    SeeAlso:
+        ../../../c/types/camera_intrinsics.h
+        ../../types/camera_intrinsics.h
+
+    """
 
     def __init__(self, focal_length=1., principle_point=(0, 0),
                  aspect_ratio=1., skew=0., dist_coeffs=(), from_cptr=None):
@@ -63,7 +69,7 @@ class CameraIntrinsics (VitalObject):
         :param dist_coeffs: Existing distortion coefficients (Default: empty).
             Values are copied into this structure.
         :type dist_coeffs: collections.Sequence[float]
-        
+
         """
         super(CameraIntrinsics, self).__init__(from_cptr, focal_length,
                                                principle_point, aspect_ratio,
@@ -78,7 +84,7 @@ class CameraIntrinsics (VitalObject):
         :type aspect_ratio: float
         :type skew: float
         :type dist_coeffs: collections.Sequence[float]
-        
+
         """
         ci_new = self.VITAL_LIB['vital_camera_intrinsics_new']
         ci_new.argtypes = [
@@ -161,23 +167,22 @@ class CameraIntrinsics (VitalObject):
 
     def __ne__(self, other):
         return not (self == other)
-    
+
     def __str__(self):
         l = []
-        l.append(''.join(['focal length = ',str(self.focal_length)]))
-        l.append(''.join(['aspect ratio = ',str(self.aspect_ratio)]))
+        l.append(''.join(['focal length = ', str(self.focal_length)]))
+        l.append(''.join(['aspect ratio = ', str(self.aspect_ratio)]))
         pp = self.principle_point.ravel()
-        l.append(''.join(['principle point = (',str(pp[0]),', ',str(pp[1]),
-                                              ')']))
-        l.append(''.join(['skew = ',str(self.skew)]))
+        l.append(''.join(['principle point = (', str(pp[0]), ', ', str(pp[1]), ')']))
+        l.append(''.join(['skew = ', str(self.skew)]))
         d = self.dist_coeffs.ravel()
         d = numpy.array2string(d, separator=',')
-        l.append(''.join(['distortion = [',str(d[2:])]))
+        l.append(''.join(['distortion = [', str(d[2:])]))
         return '\n'.join(l)
-    
+
     def __repr__(self):
         cls_name = self.__class__.__name__
-        return ''.join([cls_name,'\n',str(self)])
+        return ''.join([cls_name, '\n', str(self)])
 
     def as_matrix(self):
         """

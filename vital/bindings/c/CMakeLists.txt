@@ -19,6 +19,7 @@ set(vital_c_public_headers
 
   types/bounding_box.h
   types/camera.h
+  types/camera.hxx
   types/camera_intrinsics.h
   types/camera_map.h
   types/color.h

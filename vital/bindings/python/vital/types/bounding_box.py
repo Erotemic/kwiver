@@ -308,7 +308,6 @@ class BoundingBox (VitalObject, NiceRepr):
         self = cls(xmin, ymin, xmax, ymax)
         return self
 
-    @property
     def coords(self):
         return [self.min_x(), self.min_y(), self.max_x(), self.max_y()]
 

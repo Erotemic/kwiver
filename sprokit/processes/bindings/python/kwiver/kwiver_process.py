@@ -176,6 +176,7 @@ class KwiverProcess(process.PythonProcess):
         self.add_type_trait("homography_ref_to_src", "kwiver:r2s_homography")
         self.add_type_trait("image_file_name", "kwiver:image_file_name")
         self.add_type_trait("video_file_name", "kwiver:video_file_name")
+        self.add_type_trait("camera", "kwiver:camera")
 
         self.add_type_trait("double_vector", "kwiver:d_vector",
                             VTC._convert_double_vector_in,

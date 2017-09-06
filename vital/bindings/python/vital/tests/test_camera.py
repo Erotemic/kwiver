@@ -122,7 +122,7 @@ class TestVitalCamera (unittest.TestCase):
         )
 
     def test_rotation_initialized(self):
-        r_expected = Rotation.from_axis_angle([[0],[1],[0]], math.pi / 8)
+        r_expected = Rotation.from_axis_angle([[0], [1], [0]], math.pi / 8)
         cam = Camera(rotation=r_expected)
         nose.tools.assert_is_not(cam.rotation, r_expected)
         nose.tools.assert_equal(cam.rotation, r_expected)
