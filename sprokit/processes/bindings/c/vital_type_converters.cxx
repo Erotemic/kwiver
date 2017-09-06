@@ -71,47 +71,6 @@ static kwiver::vital::logger_handle_t logger( kwiver::vital::get_logger( "vital.
 
 namespace {
 
-
-// ------------------------------------------------------------------
-//
-// A shortcut for defining convertors for vital types
-//
-#define VITAL_FROM_DATUM( CXX_CLASS_NAME, CXX_SPTR_TYPE, C_TYPE )                          \
-C_TYPE vital_##CXX_CLASS_NAME##_from_datum( PyObject* args )                               \
-{                                                                                          \
-  sprokit::datum* dptr = (sprokit::datum*) PyCapsule_GetPointer( args, "sprokit::datum" ); \
-  try                                                                                      \
-  {                                                                                        \
-    boost::any const any = dptr->get_datum< boost::any > ();                               \
-    CXX_SPTR_TYPE sptr = boost::any_cast< CXX_SPTR_TYPE > ( any );                         \
-    C_TYPE ptr =  CXX_CLASS_NAME##_from_sptr( sptr );                                      \
-    return ptr;                                                                            \
-  }                                                                                        \
-  catch ( boost::bad_any_cast const& e )                                                   \
-  {                                                                                        \
-    LOG_WARN( logger, "Conversion error" << e.what() );                                    \
-  }                                                                                        \
-  return NULL;                                                                             \
-}                                                                                          \
-
-
-#define VITAL_TO_DATUM( CXX_CLASS_NAME, CXX_SPTR_TYPE, C_TYPE ) \
-PyObject*                                                       \
-CXX_CLASS_NAME##_to_datum( C_TYPE handle )                      \
-{                                                               \
-  CXX_SPTR_TYPE sptr = CXX_CLASS_NAME##_to_sptr( handle );      \
-  if ( ! sptr )                                                 \
-  {                                                             \
-    Py_RETURN_NONE;                                             \
-  }                                                             \
-  PyObject* cap = put_in_datum_capsule( sptr );                 \
-  return cap;                                                   \
-}                                                               \
-
-
-VITAL_FROM_DATUM(camera, kwiver::vital::camera_sptr, camera_t*)
-VITAL_TO_DATUM(  camera, kwiver::vital::camera_sptr, camera_t*)
-
 /**
  * @brief Wrap value in PyCapsule for python return.
  *
@@ -147,6 +106,47 @@ put_in_datum_capsule( T value )
 }
 
 } // end anon namespace
+
+
+// ------------------------------------------------------------------
+//
+// A shortcut for defining convertors for vital types
+//
+#define VITAL_FROM_DATUM( CXX_CLASS_NAME, CXX_SPTR_TYPE, C_TYPE )                          \
+C_TYPE vital_##CXX_CLASS_NAME##_from_datum( PyObject* args )                               \
+{                                                                                          \
+  sprokit::datum* dptr = (sprokit::datum*) PyCapsule_GetPointer( args, "sprokit::datum" ); \
+  try                                                                                      \
+  {                                                                                        \
+    boost::any const any = dptr->get_datum< boost::any > ();                               \
+    CXX_SPTR_TYPE sptr = boost::any_cast< CXX_SPTR_TYPE > ( any );                         \
+    C_TYPE ptr =  vital_##CXX_CLASS_NAME##_from_sptr( sptr, NULL );                        \
+    return ptr;                                                                            \
+  }                                                                                        \
+  catch ( boost::bad_any_cast const& e )                                                   \
+  {                                                                                        \
+    LOG_WARN( logger, "Conversion error" << e.what() );                                    \
+  }                                                                                        \
+  return NULL;                                                                             \
+}                                                                                          \
+
+
+#define VITAL_TO_DATUM( CXX_CLASS_NAME, CXX_SPTR_TYPE, C_TYPE )          \
+PyObject*                                                                \
+CXX_CLASS_NAME##_to_datum( C_TYPE handle )                               \
+{                                                                        \
+  CXX_SPTR_TYPE sptr = vital_##CXX_CLASS_NAME##_to_sptr( handle, NULL ); \
+  if ( ! sptr )                                                          \
+  {                                                                      \
+    Py_RETURN_NONE;                                                      \
+  }                                                                      \
+  PyObject* cap = put_in_datum_capsule( sptr );                          \
+  return cap;                                                            \
+}                                                                        \
+
+
+VITAL_FROM_DATUM(camera, kwiver::vital::camera_sptr, vital_camera_t*)
+VITAL_TO_DATUM(  camera, kwiver::vital::camera_sptr, vital_camera_t*)
 
 
 // ==================================================================

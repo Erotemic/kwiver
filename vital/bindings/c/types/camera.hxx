@@ -56,7 +56,7 @@
  */
 VITAL_C_EXPORT
 vital_camera_t*
-vital_camera_new_from_sptr( kwiver::vital::camera_sptr sptr, vital_error_handle_t* eh );
+vital_camera_from_sptr( kwiver::vital::camera_sptr sptr, vital_error_handle_t* eh );
 
 
 /// Get the vital::camera shared pointer for a handle.
