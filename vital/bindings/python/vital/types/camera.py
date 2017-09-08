@@ -33,19 +33,31 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Interface to vital::camera class.
 
 """
+from __future__ import print_function
 import ctypes
 
 import numpy
 
-from vital.types.covariance import Covariance
-from vital.types.eigen import EigenArray
-from vital.types.rotation import Rotation
-from vital.types.camera_intrinsics import CameraIntrinsics
+# from vital.types.covariance import Covariance
+# from vital.types.eigen import EigenArray
+# from vital.types.rotation import Rotation
+# from vital.types.camera_intrinsics import CameraIntrinsics
+from vital.types import (
+    Covariance,
+    EigenArray,
+    Rotation,
+    CameraIntrinsics)
 from vital.util import VitalObject, VitalErrorHandle
 
 
 class Camera (VitalObject):
-    """ vital::camera interface class """
+    """
+    vital::camera interface class
+
+    SeeAlso:
+        ../../../c/types/camera.h
+        ../../types/camera.h
+    """
 
     @classmethod
     def from_krtd_file(cls, filepath):
@@ -125,6 +137,10 @@ class Camera (VitalObject):
             intrinsics = CameraIntrinsics()
 
         with VitalErrorHandle() as eh:
+            # import sys
+            # print('intrinsics = {!r}'.format(intrinsics), file=sys.stderr)
+            # print('rotation = {!r}'.format(rotation), file=sys.stderr)
+            # print('center = {!r}'.format(center), file=sys.stderr)
             return cam_new(center, rotation, intrinsics, eh)
 
     def _destroy(self):

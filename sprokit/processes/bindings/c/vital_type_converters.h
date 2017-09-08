@@ -42,6 +42,7 @@
 #include <vital/bindings/c/types/detected_object_set.h>
 #include <vital/bindings/c/types/image_container.h>
 #include <vital/bindings/c/types/track_set.h>
+#include <vital/bindings/c/types/camera.h>
 
 #include <sprokit/python/util/python.h>
 
@@ -49,6 +50,12 @@
 extern "C"
 {
 #endif
+
+VITAL_TYPE_CONVERTERS_EXPORT
+vital_camera_t* vital_camera_from_datum( PyObject* args );
+
+VITAL_TYPE_CONVERTERS_EXPORT
+PyObject* vital_camera_to_datum( vital_camera_t* handle );
 
 VITAL_TYPE_CONVERTERS_EXPORT
 vital_image_container_t* vital_image_container_from_datum( PyObject* args );

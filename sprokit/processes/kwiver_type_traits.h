@@ -45,6 +45,7 @@
 #include <vital/types/geo_corner_points.h>
 #include <vital/types/geo_lat_lon.h>
 #include <vital/types/image_container.h>
+#include <vital/types/camera.h>
 #include <vital/types/matrix.h>
 #include <vital/types/object_track_set.h>
 #include <vital/types/track_descriptor_set.h>
@@ -82,6 +83,7 @@ create_type_trait( timestamp, "kwiver:timestamp", kwiver::vital::timestamp );
 create_type_trait( gsd, "kwiver:gsd", kwiver::vital::gsd_t );
 create_type_trait( corner_points, "corner_points", kwiver::vital::geo_corner_points );
 create_type_trait( image, "kwiver:image", kwiver::vital::image_container_sptr );
+create_type_trait( camera, "kwiver:camera", kwiver::vital::camera_sptr );
 create_type_trait( mask, "kwiver:mask", kwiver::vital::image_container_sptr );
 create_type_trait( feature_set, "kwiver:feature_set", kwiver::vital::feature_set_sptr );
 create_type_trait( descriptor_set, "kwiver:descriptor_set", kwiver::vital::descriptor_set_sptr );
@@ -111,6 +113,7 @@ create_port_trait( bounding_box, bounding_box, "Bounding box" );
 create_port_trait( timestamp, timestamp, "Timestamp for input image." );
 create_port_trait( corner_points, corner_points, "Four corner points for image in lat/lon units, ordering ul ur lr ll." );
 create_port_trait( gsd, gsd, "GSD for image in meters per pixel." );
+create_port_trait( camera, camera, "Camera calibration matrix." );
 create_port_trait( image, image, "Single frame image." );
 create_port_trait( left_image, image, "Single frame left image." );
 create_port_trait( right_image, image, "Single frame right image." );

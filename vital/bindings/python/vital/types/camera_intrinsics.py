@@ -39,6 +39,7 @@ import ctypes
 import numpy
 
 from vital.types.eigen import EigenArray
+# from vital.types import EigenArray
 from vital.util import VitalErrorHandle, VitalObject
 
 

@@ -45,7 +45,39 @@ from vital.types import DetectedObjectSet
 from vital.types import ImageContainer
 from vital.types import TrackSet
 from vital.util import find_vital_library
+from vital.types import Camera
 from vital.util.string import vital_string_t
+
+
+def _convert_camera_in(datum_ptr):
+    """
+    Convert datum as PyCapsule to camera opaque handle.
+    """
+    _VCL = find_vital_library.find_vital_type_converter_library()
+    # Convert from datum to opaque handle.
+    func = _VCL.vital_camera_from_datum
+    func.argtypes = [ctypes.py_object]
+    func.restype = Camera.C_TYPE_PTR
+    # get opaque handle from the datum
+    handle = func(datum_ptr)
+
+    # convert handle to python object - from c-ptr
+    py_ic_obj = Camera(from_cptr=handle)
+
+    return py_ic_obj
+
+
+def _convert_camera_out(handle):
+    """
+    Convert datum as PyCapsule from camera opaque handle.
+    """
+    _VCL = find_vital_library.find_vital_type_converter_library()
+    # convert opaque handle to datum (as PyCapsule)
+    func =  _VCL.vital_camera_to_datum
+    func.argtypes = [ Camera.C_TYPE_PTR ]
+    func.restype = ctypes.py_object
+    retval = func(handle)
+    return retval
 
 
 def _convert_image_container_in(datum_ptr):
@@ -62,6 +94,7 @@ def _convert_image_container_in(datum_ptr):
 
     # convert handle to python object - from c-ptr
     py_ic_obj = ImageContainer(None, handle)
+    # py_ic_obj = ImageContainer.from_cptr(handle) ???
 
     return py_ic_obj
 
@@ -181,7 +214,7 @@ def _convert_object_track_set_out(handle):
     func.argtypes = [ TrackSet.C_TYPE_PTR ]
     func.restype = ctypes.py_object
     return func(handle)
-    
+
 
 # ------------------------------------------------------------------
 def convert_string_vector_in(datum_ptr):

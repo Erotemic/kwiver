@@ -38,8 +38,8 @@ import os
 from importlib import import_module
 import logging
 
+logging.basicConfig(level=getattr(logging, os.environ.get('KWIVER_DEFAULT_LOG_LEVEL', 'INFO').upper(), logging.DEBUG))
 log = logging.getLogger(__name__)
-print = log.info
 
 
 class Loader(object):
@@ -107,7 +107,7 @@ class ModuleLoader(Loader):
 
         for ext in py_exts:
             if namespace.endswith(ext):
-                print(('[WARNING] do not specify .py extension for '
+                log.info(('[WARNING] do not specify .py extension for '
                        'the {} sprokit python module').format(namespace))
                 namespace = namespace[:-len(ext)]
 
@@ -159,10 +159,10 @@ class ModuleLoader(Loader):
             import_path = '.'.join(path_segments)
 
             try:
-                print('import_path = {!r}'.format(import_path))
+                log.info('import_path = {!r}'.format(import_path))
                 module = import_module(import_path)
             except ImportError as e:
-                print('[WARNING] Could not import: {} Reason: {}'.format(
+                log.warn('Could not import: {} Reason: {!r}'.format(
                     import_path, e))
                 module = None
 

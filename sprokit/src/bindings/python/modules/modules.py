@@ -36,8 +36,8 @@ except:
 import logging
 import os
 
+logging.basicConfig(level=getattr(logging, os.environ.get('KWIVER_DEFAULT_LOG_LEVEL', 'INFO').upper(), logging.DEBUG))
 log = logging.getLogger(__name__)
-os.environ.get('KWIVER_DEFAULT_LOG_LEVEL', 'debug')
 
 
 # def _log(msg):
@@ -79,6 +79,8 @@ def load_python_modules():
     # importing antigravity and every other standard library module
     packages.extend([p for p in extra_modules if p])
 
+    log.debug('SPROKIT_PYTHON_MODULES = {}'.format(packages))
+
     loader = loaders.ModuleLoader()
     all_modules = []
 
@@ -87,12 +89,12 @@ def load_python_modules():
         all_modules += modules
 
     for module in all_modules:
-        log.debug('[DEBUG] Loading python module: {}'.format(module))
+        log.debug('Loading python module: {}'.format(module))
 
         try:
             _load_python_module(module)
         except BaseException as e:
-            log.warn('Failed to load "{}": {}'.format(module, e))
+            log.warn('Failed to load "{}": {!r}'.format(module, e))
             # import sys
             # e = sys.exc_info()[1]
             # _log("Failed to load '%s': %s" % (module, str(e)))

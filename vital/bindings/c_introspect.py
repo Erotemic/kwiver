@@ -1,3 +1,28 @@
+"""
+To generate bindings for a type:
+
+    Need to make .cxx, .h, and .hxx c bindings in:
+        ~/code/VIAME/packages/kwiver/vital/bindings/c/types
+
+        # and add them to cmake lists
+        ~/code/VIAME/packages/kwiver/vital/bindings/c/types/CMakeLists.txt
+
+    Need to make .py bindings in:
+        ~/code/VIAME/packages/kwiver/vital/bindings/python/vital/types
+
+
+    Need to define type converters:
+
+        ~/code/VIAME/packages/kwiver/sprokit/processes/bindings/c/vital_type_converters.cxx
+        ~/code/VIAME/packages/kwiver/sprokit/processes/bindings/c/vital_type_converters.h
+        ~/code/VIAME/packages/kwiver/sprokit/processes/bindings/python/kwiver/util/vital_type_converters.py
+
+    Need to register type converters:
+
+        ~/code/VIAME/packages/kwiver/sprokit/processes/kwiver_type_traits.h
+        ~/code/VIAME/packages/kwiver/sprokit/processes/bindings/python/kwiver/kwiver_process.py
+"""
+
 from os.path import expanduser, join
 import re
 import ubelt as ub
@@ -10,8 +35,11 @@ BLANK_LINE_PLACEHOLDER = '// NOOP(BLANK_LINE)'
 
 class TypeRegistry(object):
     mappings = {
-        'vector_t': CType('double *'),
+        'vector_t': CType('double*'),
         'std::string': CType('char*'),
+        'vector_3d': CType('vital_eigen_matrix3x1d_t*'),
+        'covariance_3d':  CType('vital_covariance_3d_t*'),
+        'rotation_d': CType('vital_rotation_d_t*')
     }
 
 
@@ -21,6 +49,7 @@ class VitalRegistry(object):
         'feature': 'FEATURE_SPTR_CACHE',
         'detected_object': 'DOBJ_SPTR_CACHE',
         'detected_object_type': 'DOT_SPTR_CACHE',
+        'camera': 'CAMERA_SPTR_CACHE',
     }
 
     #
@@ -29,9 +58,9 @@ class VitalRegistry(object):
     }
 
     @staticmethod
-    def get_sptr_cachename(classname):
-        default = '_' + classname.upper() + '_SPTR_CACHE'
-        base_cachename = VitalRegistry.sptr_caches.get(classname, default)
+    def get_sptr_cachename(cxx_classname):
+        default = '_' + cxx_classname.upper() + '_SPTR_CACHE'
+        base_cachename = VitalRegistry.sptr_caches.get(cxx_classname, default)
         return 'kwiver::vital_c::' + base_cachename
 
     vital_types = {
@@ -50,6 +79,9 @@ class VitalRegistry(object):
     reinterpretable = {
         'bounding_box',
         'bounding_box_d',
+        'vector_3d',
+        'covariance_3d',
+        'rotation_d',
     }
 
 
@@ -219,22 +251,36 @@ class VitalCArg(CArg):
                 '''
             ).format(**fmtdict)
         elif carg.type.data_base in VitalRegistry.reinterpretable:
+            """
+            Test With:
+                python -m c_introspect VitalTypeIntrospectCxx:0 --class=camera  --func=get_rotation
+                python -m c_introspect VitalTypeIntrospectCxx:0 --class=detected_object  --func=bounding_box,set_bounding_box
+            """
+
+
             # Copy and reinteperet
             # Ensure this always works with vital_detected_object_bounding_box
             # cxx_type1 = CType(cxx_ns + 'bounding_box_d*')
-            cxx_type1 = CType(cxx_ns + str(carg.type.addr()) )
-            cxx_type2 = cxx_type1.dref()
+            cxx_type = CType(cxx_ns + str(carg.type))
+            cxx_type1 = cxx_type.copy().addr().no_ref()
+            cxx_type2 = cxx_type1.dref().no_modifiers()
+
             fmtdict.update({
                 'cxx_type1': str(cxx_type1),
                 'cxx_type2': str(cxx_type2),
                 'c_type': carg.c_type(),
                 # + '==' +'vital_bounding_box_t*',
             })
+            # text = ub.codeblock(
+            #     '''
+            #     // DEBUG(cxx-to-c reinterpretable)
+            #     {c_type} {c_name} = *reinterpret_cast< {c_type} >( new {cxx_type2}( {cxx_name} ) );
+            #     ''').format(**fmtdict)
             text = ub.codeblock(
                 '''
                 // DEBUG(cxx-to-c reinterpretable)
                 {cxx_type1} {cxx_name}_copy = new {cxx_type2}( {cxx_name} )
-                {c_type} {c_name} = *reinterpret_cast< {c_type} >( {cxx_name}_copy );
+                {c_type} {c_name} = reinterpret_cast< {c_type} >( {cxx_name}_copy );
                 ''').format(**fmtdict)
         elif carg.type.data_base == 'std::string':
             text = ub.codeblock(
@@ -293,9 +339,9 @@ class VitalCArg(CArg):
                 c_class = carg.vital_classname()
                 if c_class is not None:
                     import utool as ut
-                    py_class = ut.to_camel_case(c_class)
+                    py_classname = ut.to_camel_case(c_class)
                     assert ptr_degree > 0
-                    ctype = py_class + '.C_TYPE_PTR'
+                    ctype = py_classname + '.C_TYPE_PTR'
                     ctype = wrap_pointer(ctype, ptr_degree - 1)
                     return ctype
             raise NotImplementedError('ctypes parsing for {}'.format(carg))
@@ -304,16 +350,16 @@ class VitalCArg(CArg):
 CArgspec._CARG = VitalCArg
 
 
-def inspect_existing_bindings(classname):
+def inspect_existing_bindings(cxx_classname):
 
-    cxxtype = VitalTypeIntrospectCxx(classname)
+    cxxtype = VitalTypeIntrospectCxx(cxx_classname)
     cxxtype.parse_cxx_class_header()
 
-    cbind = VitalTypeIntrospectCBind(classname)
+    cbind = VitalTypeIntrospectCBind(cxx_classname)
     cbind.parse_c_class_bindings()
 
     def cxx_funcname(info):
-        prefix = 'vital_{}_'.format(info.classname)
+        prefix = 'vital_{}_'.format(info.cxx_classname)
         funcname = info.info['cxx_funcname']
         if funcname.startswith(prefix):
             return funcname[len(prefix):]
@@ -339,19 +385,19 @@ def DETECTED_OBJECT_WIP():
     import sys
     sys.path.append('/home/joncrall/code/VIAME/packages/kwiver/vital/bindings')
     from c_introspect import *  # NOQA
-    #classname = 'oriented_bounding_box'
-    classname = 'detected_object'
+    #cxx_classname = 'oriented_bounding_box'
+    cxx_classname = 'detected_object'
 
 
-    cxxtype = VitalTypeIntrospectCxx(classname)
+    cxxtype = VitalTypeIntrospectCxx(cxx_classname)
     cxxtype.parse_cxx_class_header()
     text = cxxtype.dump_c_bindings()
     print(ub.highlight_code(text, 'cxx'))
 
-    cbind = VitalTypeIntrospectCBind(classname)
+    cbind = VitalTypeIntrospectCBind(cxx_classname)
     cbind.parse_c_class_bindings()
 
-    inspect_existing_bindings(classname)
+    inspect_existing_bindings(cxx_classname)
     """
 
 
@@ -364,41 +410,43 @@ class VitalTypeIntrospectCxx(object):
         python -m c_introspect VitalTypeIntrospectCxx:0 --class=detected_object
         python -m c_introspect VitalTypeIntrospectCxx:0 --class=detected_object --func=mask
 
+        python -m c_introspect VitalTypeIntrospectCxx:0 --class=camera
+
     Example:
         >>> import sys
         >>> sys.path.append('/home/joncrall/code/VIAME/packages/kwiver/vital/bindings')
         >>> from c_introspect import *
-        >>> #classname = 'oriented_bounding_box'
-        >>> classname = ub.argval('--class', default='detected_object')
+        >>> #cxx_classname = 'oriented_bounding_box'
+        >>> cxx_classname = ub.argval('--class', default='detected_object')
         >>> funcnames = ub.argval('--func', default=None)
-        >>> self = VitalTypeIntrospectCxx(classname)
+        >>> self = VitalTypeIntrospectCxx(cxx_classname)
         >>> self.parse_cxx_class_header()
         >>> text = self.dump_c_bindings(funcnames)
         >>> print(ub.highlight_code(text, 'cpp'))
     """
-    def __init__(self, classname):
-        self.classname = classname
+    def __init__(self, cxx_classname):
+        self.cxx_classname = cxx_classname
         self.cxx_type_base = expanduser('~/code/VIAME/packages/kwiver/vital/types/')
         self.cxx_method_infos = []
         self.cxx_rel_includes = []
 
     def parse_cxx_class_header(self):
-        cxx_path = join(self.cxx_type_base, self.classname + '.h')
+        cxx_path = join(self.cxx_type_base, self.cxx_classname + '.h')
 
         text = ub.readfrom(cxx_path)
 
         # Remove comments
         text = CPatternMatch.strip_comments(text)
-        self.cxx_constructor_infos = CPatternMatch.constructors(text, self.classname)
-        self.cxx_method_infos = CPatternMatch.func_declarations(text, self.classname)
+        self.cxx_constructor_infos = CPatternMatch.constructors(text, self.cxx_classname)
+        self.cxx_method_infos = CPatternMatch.func_declarations(text, self.cxx_classname)
         self.cxx_rel_includes = CPatternMatch.relative_includes(text)
 
     def dump_c_bindings(self, funcnames=None):
         fmtdict = {
-            'c_type': 'vital_{classname}_t'.format(classname=self.classname),
+            'c_type': 'vital_{cxx_classname}_t'.format(cxx_classname=self.cxx_classname),
             'copyright': fmt_templates.COPYRIGHT,
-            'classname': self.classname,
-            'CLASSNAME': self.classname.upper()
+            'cxx_classname': self.cxx_classname,
+            'CXX_CLASSNAME': self.cxx_classname.upper()
         }
 
         sptr_header = self.autogen_vital_header_c(fmtdict)
@@ -412,7 +460,7 @@ class VitalTypeIntrospectCxx(object):
 
         init_parts = []
         for n, info in enumerate(self.cxx_constructor_infos):
-            if funcnames is None:
+            if funcnames is None or '__init__' in funcnames:
                 text = self.autogen_vital_init_c(n, info, fmtdict)
                 init_parts.append(text)
         if init_parts:
@@ -432,25 +480,142 @@ class VitalTypeIntrospectCxx(object):
                 // --- METHODS ---
                 ''')] + method_parts
 
+        sptr_conversions = self.autogen_vital_sptr_conversions(fmtdict)
+
+        if sptr_conversions:
+            parts += [ub.codeblock(
+                '''
+                // --- SMART POINTER CONVERSIONS ---
+                ''')] + sptr_conversions
+
         # print(text)
         text = '\n\n\n'.join(parts)
         return text
+
+    def autogen_vital_sptr_conversions(self, fmtdict):
+        fmtdict = fmtdict.copy()
+        fmtdict['c_type'] = fmtdict['c_type'] + '*'
+        fmtdict['sptr_type'] = 'kwiver::vital::' + fmtdict['cxx_classname'] + '_sptr'
+        fmtdict['SPTR_CACHE'] = VitalRegistry.get_sptr_cachename(fmtdict['cxx_classname'])
+
+        sptr_conversions = []
+
+        sptr_conversions += [
+            fmt_templates.VITAL_BINDING_FROM_SPTR_CONVERSION.format(**fmtdict)
+        ]
+
+        sptr_conversions += [
+            fmt_templates.VITAL_BINDING_TO_SPTR_CONVERSION.format(**fmtdict)
+        ]
+
+        if True:
+            # HACK: this part belongs in a different file
+            # the
+            import utool as ut
+            fmtdict['py_classname'] = ut.to_camel_case(fmtdict['cxx_classname'])
+            fmtdict['brief_doc'] = 'TODO: parse and insert brief class description'
+
+            sptr_conversions += [ub.codeblock(
+                '''
+                // ----
+                // PUT INTO kwiver/sprokit/processes/bindings/c/vital_type_converters.cxx
+
+                #include <vital/types/{cxx_classname}.h>
+                #include <vital/bindings/c/types/{cxx_classname}.hxx>
+
+                VITAL_FROM_DATUM({cxx_classname}, {sptr_type}, {c_type})
+                VITAL_TO_DATUM(  {cxx_classname}, {sptr_type}, {c_type})
+
+                // ----
+                // PUT INTO kwiver/sprokit/processes/bindings/c/vital_type_converters.h
+
+                #include <vital/bindings/c/types/{cxx_classname}.h>
+
+                VITAL_TYPE_CONVERTERS_EXPORT
+                {c_type} vital_{cxx_classname}_from_datum( PyObject* args );
+
+                VITAL_TYPE_CONVERTERS_EXPORT
+                PyObject* vital_{cxx_classname}_to_datum( {c_type} handle );
+
+                // ----
+                // PUT INTO ~/code/VIAME/packages/kwiver/sprokit/processes/kwiver_type_traits.h
+
+                #include <vital/types/{cxx_classname}.h>
+
+
+                create_type_trait( {cxx_classname}, "kwiver:{cxx_classname}", {sptr_type} );
+                create_port_trait( {cxx_classname}, {cxx_classname}, "{brief_doc}" );
+
+                ''').format(**fmtdict)
+            ]
+
+            print(ub.highlight_code(ub.codeblock(
+                '''
+                // ----
+                // PUT INTO ~/code/VIAME/packages/kwiver/sprokit/processes/bindings/python/kwiver/util/vital_type_converters.py
+
+                from vital.types import {py_classname}
+
+                def _convert_{cxx_classname}_in(datum_ptr):
+                    """
+                    Convert datum as PyCapsule to {cxx_classname} opaque handle.
+                    """
+                    _VCL = find_vital_library.find_vital_type_converter_library()
+                    # Convert from datum to opaque handle.
+                    func = _VCL.vital_{cxx_classname}_from_datum
+                    func.argtypes = [ctypes.py_object]
+                    func.restype = {py_classname}.C_TYPE_PTR
+                    # get opaque handle from the datum
+                    handle = func(datum_ptr)
+
+                    # convert handle to python object - from c-ptr
+                    py_ic_obj = {py_classname}(None, handle)
+
+                    return py_ic_obj
+
+
+                def _convert_{cxx_classname}_out(handle):
+                    """
+                    Convert datum as PyCapsule from {cxx_classname} opaque handle.
+                    """
+                    _VCL = find_vital_library.find_vital_type_converter_library()
+                    # convert opaque handle to datum (as PyCapsule)
+                    func =  _VCL.vital_{cxx_classname}_to_datum
+                    func.argtypes = [ {py_classname}.C_TYPE_PTR ]
+                    func.restype = ctypes.py_object
+                    retval = func(handle)
+                    return retval
+
+                // ----
+                // PUT INTO ~/code/VIAME/packages/kwiver/sprokit/processes/bindings/python/kwiver/kwiver_process.py
+
+                self.add_type_trait('{cxx_classname}', 'kwiver:{cxx_classname}',
+                                    VTC._convert_{cxx_classname}_in,
+                                    VTC._convert_{cxx_classname}_out)
+
+                self.add_port_trait("{cxx_classname}", "{cxx_classname}", "{brief_doc}")
+
+
+
+                ''').format(**fmtdict)))
+
+        return sptr_conversions
 
     def autogen_vital_header_c(self, fmtdict):
         sptr_header = ub.codeblock(
             '''
             {copyright}
 
-            #include "{classname}.h"
-            #include <vital/types/{classname}.h>
+            #include "{cxx_classname}.h"
+            #include <vital/types/{cxx_classname}.h>
             #include <vital/bindings/c/helpers/c_utils.h>
 
             namespace kwiver {{
             namespace vital_c {{
 
             // Allocate our shared pointer cache object
-            SharedPointerCache< kwiver::vital::{classname}, {c_type}>
-              {CLASSNAME}_SPTR_CACHE( "{classname}" );
+            SharedPointerCache< kwiver::vital::{cxx_classname}, {c_type}>
+              {CXX_CLASSNAME}_SPTR_CACHE( "{cxx_classname}" );
 
             }} }}
 
@@ -464,10 +629,10 @@ class VitalTypeIntrospectCxx(object):
 
         init_name = 'v{}'.format(n)
 
-        c_funcname = 'vital_{classname}_from_{init_name}'.format(
-            classname=self.classname, init_name=init_name)
+        c_funcname = 'vital_{cxx_classname}_from_{init_name}'.format(
+            cxx_classname=self.cxx_classname, init_name=init_name)
 
-        # fmtdict['cxx_type'] = 'kwiver::vital::' + self.classname
+        # fmtdict['cxx_type'] = 'kwiver::vital::' + self.cxx_classname
 
         ret_type = CType(info['return_type'])
         info.info['return_type'] = ret_type.data_base + '_sptr'
@@ -520,11 +685,11 @@ class VitalTypeIntrospectCxx(object):
         fmtdict['cxx_funcname'] = info['cxx_funcname']
 
         if c_funcname is None:
-            c_funcname = 'vital_{classname}_{cxx_funcname}'.format(**fmtdict)
+            c_funcname = 'vital_{cxx_classname}_{cxx_funcname}'.format(**fmtdict)
         fmtdict['c_funcname'] = c_funcname
 
         if needs_self:
-            self_cxx_arg = VitalCArg(fmtdict['classname'] + '_sptr', 'self')
+            self_cxx_arg = VitalCArg(fmtdict['cxx_classname'] + '_sptr', 'self')
             self_cxx_arg.check_null = False
             argsepc.args.insert(0, self_cxx_arg)
 
@@ -610,13 +775,13 @@ class VitalTypeIntrospectCBind(object):
         >>> import sys
         >>> sys.path.append('/home/joncrall/code/VIAME/packages/kwiver/vital/bindings')
         >>> from c_introspect import *
-        >>> classname = ub.argval('--class', default='feature_set')
-        >>> self = VitalTypeIntrospectCBind(classname)
+        >>> cxx_classname = ub.argval('--class', default='feature_set')
+        >>> self = VitalTypeIntrospectCBind(cxx_classname)
         >>> self.parse_c_class_bindings()
     """
 
-    def __init__(self, classname):
-        self.classname = classname
+    def __init__(self, cxx_classname):
+        self.cxx_classname = cxx_classname
         self.c_binding_base = expanduser('~/code/VIAME/packages/kwiver/vital/bindings/c/types/')
         self.cxx_method_infos = []
         self.cxx_rel_includes = []
@@ -625,12 +790,12 @@ class VitalTypeIntrospectCBind(object):
         """
         Make a header using the cxx impl
         """
-        cxx_path = join(self.c_binding_base, self.classname + '.cxx')
+        cxx_path = join(self.c_binding_base, self.cxx_classname + '.cxx')
 
         text = ub.readfrom(cxx_path)
 
         text = CPatternMatch.strip_comments(text)
-        self.cxx_method_infos = CPatternMatch.func_definitions(text, self.classname)
+        self.cxx_method_infos = CPatternMatch.func_definitions(text, self.cxx_classname)
         self.cxx_rel_includes = CPatternMatch.relative_includes(text)
 
     def dump_c_header(self):
@@ -641,8 +806,8 @@ class VitalTypeIntrospectCBind(object):
 
         Example:
             >>> from c_introspect import *
-            >>> classname = ub.argval('--class', default='feature_set')
-            >>> self = VitalTypeIntrospectCBind(classname)
+            >>> cxx_classname = ub.argval('--class', default='feature_set')
+            >>> self = VitalTypeIntrospectCBind(cxx_classname)
             >>> self.parse_c_class_bindings()
             >>> self.dump_c_header()
         """
@@ -653,8 +818,8 @@ class VitalTypeIntrospectCBind(object):
             ''')
 
         fmtdict = dict(
-            classname=self.classname,
-            CLASSNAME=self.classname.upper()
+            cxx_classname=self.cxx_classname,
+            CXX_CLASSNAME=self.cxx_classname.upper()
         )
 
         methods = []
@@ -672,9 +837,9 @@ class VitalTypeIntrospectCBind(object):
         vital_types = []
         for header in self.cxx_rel_includes:
             other = header.rstrip('.h')
-            if other != self.classname:
+            if other != self.cxx_classname:
                 vital_types.append(other)
-        vital_types.append(self.classname)
+        vital_types.append(self.cxx_classname)
 
         vital_type_include_lines = []
         for vital_type in vital_types:
@@ -683,45 +848,7 @@ class VitalTypeIntrospectCBind(object):
         vital_type_include_block = '\n'.join(vital_type_include_lines)
         fmtdict['vital_type_include_block'] = vital_type_include_block
 
-        body_fmtstr = ub.codeblock(
-            r'''
-            {copyright}
-
-            /**
-             * \file
-             * \brief core {classname} class interface
-             *
-             * \seealso ../../types/{classname}.h
-             * \seealso ../../python/vital/types/{classname}.py
-             */
-
-            #ifndef VITAL_C_{CLASSNAME}_H_
-            #define VITAL_C_{CLASSNAME}_H_
-
-            #ifdef __cplusplus
-            extern "C"
-            {{
-            #endif
-
-            #include <stddef.h>
-            #include <stdint.h>
-
-            #include <vital/bindings/c/error_handle.h>
-            #include <vital/bindings/c/vital_c_export.h>
-            {vital_type_include_block}
-
-
-            /// Opaque structure for vital::{classname}
-            typedef struct vital_{classname}_s vital_{classname}_t;
-
-            {method_block}
-
-            #ifdef __cplusplus
-            }}
-            #endif
-
-            #endif // VITAL_C_{CLASSNAME}_H_
-            ''')
+        body_fmtstr = fmt_templates.VITAL_C_BINDING_H_FILE
 
         d = fmtdict.copy()
         d['method_block'] = method_block
@@ -731,8 +858,8 @@ class VitalTypeIntrospectCBind(object):
 
         print(autogen_text)
 
-        # autogen_fpath = join(self.c_binding_base, self.classname + '.h.autogen')
-        # autogen_fpath = join(self.c_binding_base, self.classname + '.h')
+        # autogen_fpath = join(self.c_binding_base, self.cxx_classname + '.h.autogen')
+        # autogen_fpath = join(self.c_binding_base, self.cxx_classname + '.h')
         print(autogen_text)
         # ub.writeto(autogen_fpath, autogen_text)
 
@@ -744,8 +871,8 @@ class VitalTypeIntrospectCBind(object):
 
         Example:
             >>> from c_introspect import *
-            >>> classname = ub.argval('--class', default='feature_set')
-            >>> self = VitalTypeIntrospectCBind(classname)
+            >>> cxx_classname = ub.argval('--class', default='feature_set')
+            >>> self = VitalTypeIntrospectCBind(cxx_classname)
             >>> self.parse_c_class_bindings()
             >>> self.dump_python_ctypes()
         """
@@ -753,7 +880,7 @@ class VitalTypeIntrospectCBind(object):
         for method_info in self.cxx_method_infos:
 
             cxx_funcname = method_info['cxx_funcname']
-            endre = re.compile('vital_' + self.classname + '_' + named('suffix', VARNAME))
+            endre = re.compile('vital_' + self.cxx_classname + '_' + named('suffix', VARNAME))
             match = endre.match(cxx_funcname)
             if match:
                 suffix = match.groupdict()['suffix']
@@ -787,10 +914,10 @@ class VitalTypeIntrospectCBind(object):
                     restype=restype)
             blocks.append(block)
 
-        py_c_api = 'def define_{}_c_api():'.format(self.classname)
-        py_c_api += '\n    class {}_c_api(object):'.format(self.classname)
+        py_c_api = 'def define_{}_c_api():'.format(self.cxx_classname)
+        py_c_api += '\n    class {}_c_api(object):'.format(self.cxx_classname)
         py_c_api += '\n        pass'
-        py_c_api += '\n    C = {}_c_api()'.format(self.classname)
+        py_c_api += '\n    C = {}_c_api()'.format(self.cxx_classname)
         py_c_api += '\n' + ub.indent('\n\n'.join(blocks))
         py_c_api += '\n    return C'
         print(py_c_api)

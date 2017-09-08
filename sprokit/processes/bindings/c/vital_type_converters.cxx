@@ -42,7 +42,6 @@ more python friendly types.
 #include <vital/types/image_container.h>
 #include <vital/types/track_set.h>
 #include <vital/types/object_track_set.h>
-#include <vital/types/camera.h>
 
 #include <vital/bindings/c/error_handle.h>
 #include <vital/bindings/c/types/image_container.hxx>
@@ -133,7 +132,7 @@ C_TYPE vital_##CXX_CLASS_NAME##_from_datum( PyObject* args )                    
 
 #define VITAL_TO_DATUM( CXX_CLASS_NAME, CXX_SPTR_TYPE, C_TYPE )          \
 PyObject*                                                                \
-CXX_CLASS_NAME##_to_datum( C_TYPE handle )                               \
+vital_##CXX_CLASS_NAME##_to_datum( C_TYPE handle )                               \
 {                                                                        \
   CXX_SPTR_TYPE sptr = vital_##CXX_CLASS_NAME##_to_sptr( handle, NULL ); \
   if ( ! sptr )                                                          \

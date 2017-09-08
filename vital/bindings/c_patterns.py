@@ -55,6 +55,248 @@ _TYPENAME = '[A-Za-z_:][:<>A-Za-z0-9_*]*'
 TYPENAME = optional(CV_QUALIFIER + '\s+') + _TYPENAME + optional('\s*?(&|&&)')
 
 
+class CType(ub.NiceRepr):
+    """
+    This should be able to (more-or-less) parse C++ "trailing-type-specifier"
+    http://www.nongnu.org/hcb/#trailing-type-specifier
+
+    Note about const:
+        Generally, const applies to the left unless it is at the extreme left
+        in which case it applies to the right.
+
+        EG:
+        char *p              = "data"; //non-const pointer, non-const data
+        const char *p        = "data"; //non-const pointer, const data
+        char const *p        = "data"; //non-const pointer, const data
+        char * const p       = "data"; //const pointer, non-const data
+        const char * const p = "data"; //const pointer, const data
+
+        note:
+            ref(&) must be to the left of the name
+            Can only have single or double refs
+
+    Note:
+        # use this for testing what syntax is valid
+        https://www.onlinegdb.com/online_c++_compiler
+
+    Note:
+        unsigned int const == unsigned int const
+
+    Example:
+        >>> import sys
+        >>> sys.path.append('/home/joncrall/code/VIAME/packages/kwiver/vital/bindings')
+        >>> from c_patterns import *
+        >>> CType('char const * * const * * const * &&').tokens
+        >>> CType('char const * * const * * const * &&')
+        >>> CType('char const * * const * * const &&').tokens
+        >>> CType('char const * * const * * const * &').tokens
+        >>> CType('char const * * const * * const &').tokens
+        >>> CType('const int&')
+        >>> CType('vector< std::string >').tokens
+        >>> CType('unsigned int')
+        >>> CType('unsigned const int').ref_degree
+        >>> CType('unsigned const int&').ref_degree
+        >>> CType('long long long').base
+        >>> CType('const volatile type_t').tokens
+        >>> CType('volatile const type_t').tokens
+        >>> ctype = CType('const volatile long long long &')
+        >>> ctype = CType('signed long long int')
+    """
+    def __init__(ctype, tokens_or_text):
+        if isinstance(tokens_or_text, six.string_types):
+            ctype.tokens = ctype._tokenize(tokens_or_text)
+        else:
+            ctype.tokens = tokens_or_text
+
+    @staticmethod
+    def _tokenize(text):
+        """
+        Each token is a tuple where the first item is the basic part and the
+        last item denotes if it is const/volatile. Each tuple may contain
+        middle items which will be spaces (if grammatically necessary).
+        """
+        cv_ = {'const', 'volatile'}
+
+        parts = text.split(' ')
+        parts = [p for part in parts for p in re.split('(const)', part)]
+        parts = [p for part in parts for p in re.split('(\*)', part) ]
+        parts = [p for part in parts for p in re.split('(&)', part) ]
+        parts = [p for p in parts if p]
+        if parts[0] in cv_:
+            assert len(parts) > 1, 'const should be applied to something'
+            if parts[1] in cv_.difference({parts[0]}):
+                # VERY RARE CASE (const+volatile)
+                parts[0], parts[1], parts[2] = parts[2], parts[0], parts[1]
+                if parts[1] == 'volatile' and parts[2] == 'const':
+                    # normalizer order
+                    parts[1], parts[2] = parts[2], parts[1]
+            else:
+                # swap for consistent order
+                parts[0], parts[1] = parts[1], parts[0]
+
+        # Group consts with appropriate parts
+        angle_count = 0
+
+        def separate(sep, items):
+            separators = [sep] * len(items)
+            return [x for tup in zip(items, separators) for x in tup][:-1]
+
+        tokens = []
+        curr_t, curr_cv = [], []
+        def _push():
+            # Helper to push current onto tokens
+            if not curr_cv:
+                if curr_t[0] in {'*', '&'}:
+                    tokens.append((''.join(curr_t),))
+                else:
+                    tokens.append((' '.join(curr_t),))
+            elif curr_t[0] == '*':
+                tokens.append((''.join(curr_t),) + tuple(separate(' ', curr_cv)))
+            else:
+                tokens.append((' '.join(curr_t), ' ',)  + tuple(separate(' ', curr_cv)))
+        for c in parts:
+            if len(curr_t) > 0 and angle_count == 0:
+                if c == '*':
+                    _push()
+                    curr_t, curr_cv = [], []
+                elif c == '&' and curr_t[-1] != '&':
+                    _push()
+                    curr_t, curr_cv = [], []
+
+            # Ensure we only split things outside balanced templates
+            angle_count += c.count('<')
+            angle_count -= c.count('>')
+            if c not in cv_:
+                curr_t.append(c)
+            else:
+                curr_cv.append(c)
+        _push()
+        return tokens
+
+    def copy(ctype):
+        return copy.deepcopy(ctype)
+
+    def dref(ctype):
+        """
+        Example:
+            >>> from c_patterns import *
+            >>> ctype = CType('int * const*')
+            >>> assert ctype.deref() == 'int *'
+            >>> assert ctype.deref().deref() == 'int'
+        """
+        if ctype.ptr_degree == 0:
+            raise ValueError('Cannot dereference further')
+        new_tokens = []
+        done = False
+        for t in ctype.tokens[::-1]:
+            if not done and t[0] == '*':
+                done = True
+            else:
+                new_tokens.append(t)
+        return CType(new_tokens[::-1])
+
+    def addr(ctype):
+        if ctype.ref_degree > 0:
+            new_tokens = ctype.tokens[:-1] + [('*',)] + ctype.tokens[-1:]
+        else:
+            new_tokens = ctype.tokens[:] + [('*',)]
+        return CType(new_tokens)
+
+    def no_ref(ctype):
+        new_ctype = ctype.copy()
+        if ctype.ref_degree > 0:
+            new_ctype.tokens = new_ctype.tokens[:-1]
+        return new_ctype
+
+    def no_modifiers(ctype):
+        """ removes all const / volatile modifiers """
+        new_ctype = ctype.copy()
+        new_ctype.tokens = [t[0] for t in new_ctype.tokens]
+        return new_ctype
+
+    def no_const(ctype):
+        """ removes all const / volatile modifiers """
+        new_ctype = ctype.copy()
+        new_ctype.tokens = [t[0] for t in new_ctype.tokens]
+        return new_ctype
+
+    def to_const(ctype, pos=0):
+        """
+        Adds a constant modifier to this type.
+
+        Doctest:
+            >>> import sys
+            >>> sys.path.append('/home/joncrall/code/VIAME/packages/kwiver/vital/bindings')
+            >>> from c_patterns import *
+            >>> assert CType('int').to_const() == 'int const'
+            >>> assert CType('int volatile').to_const() == 'int volatile const'
+            >>> assert CType('int const').to_const() == 'int const'
+            >>> assert CType('int *const').to_const() == 'int const*const'
+            >>> assert CType('int *').to_const(1) == 'int*const'
+            >>> assert CType('int *').to_const(1).to_const() == 'int const*const'
+        """
+        # TODO generalize this function to add_modifer
+        # TODO split const and volatile modifiers into seprate tokens
+
+        new_ctype = ctype.copy()
+        before = new_ctype.tokens[0:pos]
+        target = new_ctype.tokens[pos]
+        after = new_ctype.tokens[pos + 1:]
+
+        if 'const' not in target:
+            # should const be added to volatile here?
+            if len(target) == 1:
+                if target[0] == '*':
+                    new_target = target + ('const',)
+                else:
+                    new_target = target + (' ', 'const')
+            else:
+                # TODO standardize order of const and volatile here
+                new_target = target + (' ', 'const',)
+            new_ctype.tokens = before + [new_target] + after
+        return new_ctype
+
+    @property
+    def ref_degree(ctype):
+        """ returns if type is a reference, double reference or neither """
+        return ctype.tokens[-1].count('&')
+
+    @property
+    def ptr_degree(ctype):
+        """ returns how many pointers are in the type"""
+        return sum(['*' in t for t in ctype.tokens])
+
+    @property
+    def base(ctype):
+        """ returns the base ``classname'' token (may contain const) """
+        return ctype.tokens[0]
+
+    @property
+    def data_base(ctype):
+        """ returns the base ``classname'' string (never contains const) """
+        return ctype.tokens[0][0]
+
+    def __str__(ctype):
+        return ctype.format()
+
+    def __nice__(ctype):
+        return ctype.format()
+
+    def format(ctype):
+        return ''.join([''.join(t) for t in ctype.tokens])
+
+    def is_native(ctype):
+        return ctype.data_base in NATIVE_TYPES
+
+    def __eq__(self, other):
+        if isinstance(other, six.string_types):
+            other = CType(other)
+        if not isinstance(other, CType):
+            raise TypeError('Cannot compare {} to {}'.format(
+                type(self), type(other)))
+        return self.tokens == other.tokens
+
+
 class MethodInfo(ub.NiceRepr):
     def __init__(self, info):
         d = info
@@ -177,7 +419,8 @@ class CPatternMatch(object):
             cxx_constructor_infos.append(info)
 
         import utool as ut
-        print('cxx_constructor_infos = {}'.format(ut.repr4(cxx_constructor_infos)))
+        if 0:
+            print('cxx_constructor_infos = {}'.format(ut.repr4(cxx_constructor_infos)))
         return cxx_constructor_infos
 
     @staticmethod
@@ -192,7 +435,7 @@ class CPatternMatch(object):
         # attribute-specifier-seqopt decl-specifier-seqopt declarator = delete ;     C++0x
 
         cxx_func_def = WHITESPACE.join([
-            STARTLINE + SPACE + '\\b' + named('return_type', TYPENAME),
+            STARTLINE + SPACE + '\\b' + optional('virtual\s+') + named('return_type', TYPENAME),
             '\s',
             named('cxx_funcname', VARNAME),
             lparen,
@@ -216,8 +459,8 @@ class CPatternMatch(object):
         cxx_func_declares = []
         for match in re.finditer(cxx_func_def, text, flags=flags):
             # print('match = {!r}'.format(match))
-            match_text = match.string[match.start():match.end()]
-            print('match_text = {!r}'.format(match_text.replace('\n', ' ').strip()))
+            # match_text = match.string[match.start():match.end()]
+            # print('match_text = {!r}'.format(match_text.replace('\n', ' ').strip()))
             d = match.groupdict()
             info = MethodInfo(d)
             info.classname = classname
@@ -226,8 +469,9 @@ class CPatternMatch(object):
         import utool as ut
         text = ut.repr4([i.__nice__() for i in cxx_func_declares], strvals=True)
         text = ut.align(text, '->')
-        print('FUNC DECLARATIONS')
-        print('cxx_func_declares = {}'.format(text))
+        if 0:
+            print('FUNC DECLARATIONS')
+            print('cxx_func_declares = {}'.format(text))
         return cxx_func_declares
 
     @staticmethod
@@ -424,170 +668,3 @@ class CArgspec(ub.NiceRepr):
 
     def format_typespec(cargs):
         return ', '.join([str(carg.type) for carg in cargs])
-
-
-class CType(ub.NiceRepr):
-    """
-    This should be able to (more-or-less) parse C++ "trailing-type-specifier"
-    http://www.nongnu.org/hcb/#trailing-type-specifier
-
-    Note about const:
-        Generally, const applies to the left unless it is at the extreme left
-        in which case it applies to the right.
-
-        EG:
-        char *p              = "data"; //non-const pointer, non-const data
-        const char *p        = "data"; //non-const pointer, const data
-        char const *p        = "data"; //non-const pointer, const data
-        char * const p       = "data"; //const pointer, non-const data
-        const char * const p = "data"; //const pointer, const data
-
-        note:
-            ref(&) must be to the left of the name
-            Can only have single or double refs
-
-        # use this for testing what syntax is valid
-        https://www.onlinegdb.com/online_c++_compiler
-
-    Note:
-        unsigned int const == unsigned int const
-
-    Example:
-        >>> import sys
-        >>> sys.path.append('/home/joncrall/code/VIAME/packages/kwiver/vital/bindings')
-        >>> from c_patterns import *
-        >>> CType('char const * * const * * const * &&').tokens
-        >>> CType('char const * * const * * const * &&')
-        >>> CType('char const * * const * * const &&').tokens
-        >>> CType('char const * * const * * const * &').tokens
-        >>> CType('char const * * const * * const &').tokens
-        >>> CType('const int&')
-        >>> CType('vector< std::string >').tokens
-        >>> CType('unsigned int')
-        >>> CType('unsigned const int').ref_degree
-        >>> CType('unsigned const int&').ref_degree
-        >>> CType('long long long').base
-        >>> ctype = CType('const volatile long long long &')
-        >>> ctype = CType('signed long long int')
-    """
-    def __init__(ctype, tokens_or_text):
-        if isinstance(tokens_or_text, six.string_types):
-            ctype.tokens = ctype._tokenize(tokens_or_text)
-        else:
-            ctype.tokens = tokens_or_text
-
-    @staticmethod
-    def _tokenize(text):
-        # TODO: const volatile is a thing
-        cv_ = {'const', 'volatile'}
-
-        parts = text.split(' ')
-        parts = [p for part in parts for p in re.split('(const)', part)]
-        parts = [p for part in parts for p in re.split('(\*)', part) ]
-        parts = [p for part in parts for p in re.split('(&)', part) ]
-        parts = [p for p in parts if p]
-        if parts[0] in cv_:
-            assert len(parts) > 1, 'const should be applied to something'
-            if parts[1] in cv_.difference({parts[0]}):
-                # VERY RARE CASE (const+volatile)
-                parts[0], parts[1], parts[2] = parts[2], parts[0], parts[1]
-            else:
-                # swap for consistent order
-                parts[0], parts[1] = parts[1], parts[0]
-
-        # Group consts with appropriate parts
-        angle_count = 0
-
-        tokens = []
-        curr_t, curr_cv = [], []
-        def _push():
-            # Helper to push current onto tokens
-            if not curr_cv:
-                if curr_t[0] in {'*', '&'}:
-                    tokens.append((''.join(curr_t),))
-                else:
-                    tokens.append((' '.join(curr_t),))
-            elif curr_t[0] == '*':
-                tokens.append((''.join(curr_t),  ' '.join(curr_cv)))
-            else:
-                tokens.append((' '.join(curr_t), ' ', ' '.join(curr_cv)))
-        for c in parts:
-            if len(curr_t) > 0 and angle_count == 0:
-                if c == '*':
-                    _push()
-                    curr_t, curr_cv = [], []
-                elif c == '&' and curr_t[-1] != '&':
-                    _push()
-                    curr_t, curr_cv = [], []
-
-            # Ensure we only split things outside balanced templates
-            angle_count += c.count('<')
-            angle_count -= c.count('>')
-            if c not in cv_:
-                curr_t.append(c)
-            else:
-                curr_cv.append(c)
-        _push()
-        return tokens
-
-    def dref(ctype):
-        """
-        Example:
-            >>> from c_patterns import *
-            >>> ctype = CType('int * const*')
-            >>> assert ctype.deref() == 'int *'
-            >>> assert ctype.deref().deref() == 'int'
-        """
-        if ctype.ptr_degree == 0:
-            raise ValueError('Cannot dereference further')
-        new_tokens = []
-        done = False
-        for t in ctype.tokens[::-1]:
-            if not done and t[0] == '*':
-                done = True
-            else:
-                new_tokens.append(t)
-        return CType(new_tokens[::-1])
-
-    def addr(ctype):
-        if ctype.ref_degree > 0:
-            new_tokens = ctype.tokens[:-1] + [('*',)] + ctype.tokens[-1:]
-        else:
-            new_tokens = ctype.tokens[:] + [('*',)]
-        return CType(new_tokens)
-
-    @property
-    def ref_degree(ctype):
-        return ctype.tokens[-1].count('&')
-
-    @property
-    def ptr_degree(ctype):
-        return sum(['*' in t for t in ctype.tokens])
-
-    @property
-    def base(ctype):
-        return ctype.tokens[0]
-
-    @property
-    def data_base(ctype):
-        return ctype.tokens[0][0]
-
-    def __str__(ctype):
-        return ctype.format()
-
-    def __nice__(ctype):
-        return ctype.format()
-
-    def format(ctype):
-        return ''.join([''.join(t) for t in ctype.tokens])
-
-    def is_native(ctype):
-        return ctype.data_base in NATIVE_TYPES
-
-    def __eq__(self, other):
-        if isinstance(other, six.string_types):
-            other = CType(other)
-        if not isinstance(other, CType):
-            raise TypeError('Cannot compare {} to {}'.format(
-                type(self), type(other)))
-        return self.tokens == other.tokens

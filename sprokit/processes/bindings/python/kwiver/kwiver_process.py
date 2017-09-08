@@ -150,13 +150,17 @@ class KwiverProcess(process.PythonProcess):
         #
         self.add_type_trait("timestamp", "kwiver:timestamp")
         self.add_type_trait("gsd", "kwiver:gsd")
+        self.add_type_trait('camera', 'kwiver:camera',
+                            VTC._convert_camera_in,
+                            VTC._convert_camera_out)
         self.add_type_trait("image", "kwiver:image",
                             VTC._convert_image_container_in,
                             VTC._convert_image_container_out)
         self.add_type_trait("mask", "kwiver:image",
                             VTC._convert_image_container_in,
                             VTC._convert_image_container_out)
-        self.add_type_trait("feature_set", "kwiver:feature_set")
+        # self.add_type_trait("feature_set", "kwiver:feature_set"
+        #                    )
         self.add_type_trait("descriptor_set", "kwiver:descriptor_set",
                             VTC.convert_descriptor_set_in,
                             VTC.convert_descriptor_set_out)
@@ -176,7 +180,6 @@ class KwiverProcess(process.PythonProcess):
         self.add_type_trait("homography_ref_to_src", "kwiver:r2s_homography")
         self.add_type_trait("image_file_name", "kwiver:image_file_name")
         self.add_type_trait("video_file_name", "kwiver:video_file_name")
-        self.add_type_trait("camera", "kwiver:camera")
 
         self.add_type_trait("double_vector", "kwiver:d_vector",
                             VTC._convert_double_vector_in,
@@ -189,10 +192,11 @@ class KwiverProcess(process.PythonProcess):
         #                   port-name    type-trait-name    description
         self.add_port_trait("timestamp", "timestamp",
                             "Timestamp for input image")
+        self.add_port_trait("camera", "camera", "Camera parameters")
         self.add_port_trait("image", "image", "Single frame input image")
         self.add_port_trait("mask", "mask", "Imput mask image")
-        self.add_port_trait("feature_set", "feature_set",
-                            "Set of detected features")
+        # self.add_port_trait("feature_set", "feature_set",
+        #                     "Set of detected features")
         self.add_port_trait("descriptor_set", "descriptor_set",
                             "Set of feature descriptors")
         self.add_port_trait("detected_object_set", "detected_object_set",

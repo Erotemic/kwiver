@@ -33,24 +33,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 vital.types module
 
 """
+# flake8: noqa
 
 # Common VITAL Components for easy access
+from .eigen import EigenArray
 from .bounding_box import BoundingBox
-from .camera_intrinsics import CameraIntrinsics
 from .color import RGBColor
-from .covariance import Covariance
 from .descriptor import Descriptor
 from .descriptor_set import DescriptorSet
-from .eigen import EigenArray
 from .image import Image
 from .image_container import ImageContainer
-from .rotation import Rotation
 
 from .detected_object_type import DetectedObjectType
 from .detected_object import DetectedObject
 from .detected_object_set import DetectedObjectSet
 
 # Requires EigenArray
+from .rotation import Rotation
+from .covariance import Covariance
+from .camera_intrinsics import CameraIntrinsics
 from .homography import Homography
 
 # Requires EigenArray and RGBColor
