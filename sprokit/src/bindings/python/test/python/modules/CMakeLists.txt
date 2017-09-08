@@ -4,4 +4,5 @@ sprokit_add_python_module(${CMAKE_CURRENT_SOURCE_DIR}/extras.py
   sprokit/test/python/modules
   extras)
 
-sprokit_create_python_plugin_init(sprokit/test/python/modules)
+sprokit_add_python_module(${CMAKE_CURRENT_SOURCE_DIR}/__init__.py
+                          sprokit/test/python/modules __init__)

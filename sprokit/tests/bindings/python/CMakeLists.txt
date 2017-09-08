@@ -103,3 +103,9 @@ add_subdirectory(test)
 
 add_subdirectory(sprokit)
 add_subdirectory(modules)
+
+
+# Add __init__ file for sprokit.tests (TODO: the python tests should be in the source tree)
+set(python_botharch TRUE)
+sprokit_add_python_module(${CMAKE_CURRENT_SOURCE_DIR}/__init__.py
+                          sprokit/tests __init__)
