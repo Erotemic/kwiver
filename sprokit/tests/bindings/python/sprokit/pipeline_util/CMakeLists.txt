@@ -6,6 +6,11 @@ set(__modnames
   load
   )
 
+foreach (group IN LISTS __modnames)
+  sprokit_add_python_module( ${CMAKE_CURRENT_SOURCE_DIR}/test-${group}.py
+    sprokit/tests
+    test-${group})
+endforeach()
 
 
 if (KWIVER_ENABLE_TESTS)

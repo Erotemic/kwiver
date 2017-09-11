@@ -180,9 +180,70 @@ function (sprokit_add_python_module    path     modpath    module)
     "configure-${python_configure_id}")
 endfunction ()
 
+
 ###
 #
+# similar to sprokit_add_python_module, but for non-python resource files
+#
+# Configures the resouce to the python build and install dir
+#
+function (sprokit_add_python_resource    fname     modpath)
+
+  _sprokit_create_safe_modpath("${modpath}" safe_modpath)
+
+  _kwiver_python_site_package_dir( python_site_packages )
+  set(python_sitepath /${python_site_packages})
+
+
+  set(python_arch)
+  set(python_noarchdir)
+
+  if (WIN32)
+    if (python_noarch)
+      return ()
+    else ()
+      set(python_install_path lib)
+    endif ()
+  else ()
+    if (python_noarch)
+      set(python_noarchdir /noarch)
+      set(python_install_path lib)
+      set(python_arch u)
+    else ()
+      set(python_install_path "lib${LIB_SUFFIX}")
+    endif ()
+  endif ()
+
+  if (CMAKE_CONFIGURATION_TYPES)
+    set(sprokit_configure_cmake_args
+      "\"-Dconfig=${CMAKE_CFG_INTDIR}/\"")
+    set(sprokit_configure_extra_dests
+      "${sprokit_python_output_path}/\${config}/${sprokit_python_subdir}${python_noarchdir}${python_sitepath}/${modpath}/${fname}")
+  endif ()
+
+  set(configure_id "${safe_modpath}-${fname}")
+  set(resource_id "${fname}")
+
+  set(in_fpath "${CMAKE_CURRENT_SOURCE_DIR}/${fname}")
+  set(out_fpath "${sprokit_python_output_path}/${sprokit_python_subdir}${python_noarchdir}${python_sitepath}/${modpath}/${fname}")
+  set(pypkg_install_dpath "${python_install_path}/${sprokit_python_subdir}${python_sitepath}/${modpath}")
+
+  sprokit_configure_file_w_uid("${configure_id}"
+    "${resource_id}"
+    "${in_fpath}"
+    "${out_fpath}"
+    ${ARGN})
+
+  # Force installation of the test into the tests module
+  install(
+      FILES       "${out_fpath}"
+      DESTINATION "${pypkg_install_dpath}"
+      COMPONENT   runtime
+      )
+
+  add_dependencies(python "configure-${configure_id}")
 endfunction ()
+
 
 ###
 #

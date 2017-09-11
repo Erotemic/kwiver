@@ -17,6 +17,18 @@ set(__simple_testable_modnames
   version
   )
 
+set(__all_modnames
+  run
+  ${__simple_testable_modnames}
+  )
+
+# Add files to sprokit.tests module to mimic a standard python source tree
+foreach (group IN LISTS __all_modnames)
+  sprokit_add_python_module( ${CMAKE_CURRENT_SOURCE_DIR}/test-${group}.py
+    sprokit/tests
+    test-${group})
+endforeach()
+
 
 ###
 # Setup simple tests with no parameters
@@ -35,22 +47,32 @@ if (KWIVER_ENABLE_TESTS)
 endif()
 
 
-set(schedulers
+###
+# Setup tests that need py.test paramatarization
+
+set(_valid_schedulers
   pythread_per_process
   sync
   thread_per_process)
 
-function (sprokit_add_python_run_test group instance)
-  foreach (scheduler IN LISTS schedulers)
-    sprokit_add_python_test(${group} ${instance}-${scheduler})
+set(_instances
+  python_to_python
+  cpp_to_python
+  python_to_cpp
+  python_via_cpp
+)
 
-    set_tests_properties(test-python-${group}-${instance}-${scheduler}
+set(group run)
+
+sprokit_build_python_test(${group}.py test-${group}.py)
+
+
+foreach (instance IN LISTS _instances)
+  foreach (scheduler IN LISTS _valid_schedulers)
+    set(pytest_node_suffix "test_${instance}[${scheduler}]")
+    sprokit_add_python_test(${group}.py "${pytest_node_suffix}")
+    set_tests_properties(test-python-${group}.py-${pytest_node_suffix}
       PROPERTIES
         TIMEOUT 5)
   endforeach ()
-endfunction ()
-
-sprokit_add_python_run_test(run python_to_python)
-sprokit_add_python_run_test(run cpp_to_python)
-sprokit_add_python_run_test(run python_to_cpp)
-sprokit_add_python_run_test(run python_via_cpp)
+endforeach ()

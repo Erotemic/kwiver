@@ -9,3 +9,8 @@ add_subdirectory(test)
 
 add_subdirectory(sprokit)
 add_subdirectory(modules)
+
+
+# Add __init__ file for sprokit.tests (TODO: the python tests should be in the source tree)
+set(python_botharch TRUE)
+sprokit_create_python_init(sprokit/tests)
