@@ -148,10 +148,28 @@ function (kwiver_add_python_library    name    modpath)
 
 endfunction ()
 
+
 ###
-# - internal implementation -
 #
-function (kwiver_add_python_module_int    path     modpath    module)
+# kwiver_add_python_module(path modpath module)
+#
+# Installs a pure-Python module into the 'modpath' and puts it into the
+# correct place in the build tree so that it may be used with any built
+# libraries in any build configuration.
+#
+# Args:
+#     path: Path to the python source (e.g. kwiver_process.py)
+#     modpath: Python module path (e.g. kwiver/processes)
+#     module: Python module name. This is the name used to import the code.
+#         (e.g. kwiver_process)
+#
+# SeeAlso:
+#     kwiver/CMake/utils/kwiver-utils-configuration.cmake
+#     ../../sprokit/conf/sprokit-macro-python.cmake
+#     ../../vital/bindings/python/vital/CMakeLists.txt
+#     ../../sprokit/processes/bindings/python/kwiver/CMakeLists.txt
+#     ../../sprokit/processes/bindings/python/kwiver/util/CMakeLists.txt
+function (kwiver_add_python_module path     modpath    module)
   _kwiver_create_safe_modpath("${modpath}" safe_modpath)
 
   _kwiver_python_site_package_dir( python_site_packages )
@@ -205,7 +223,7 @@ function (kwiver_add_python_module_int    path     modpath    module)
 
     if (NOT WIN32)
       # this looks recursive
-      kwiver_add_python_module_int(
+      kwiver_add_python_module(
         "${path}"
         "${modpath}"
         "${module}")
@@ -213,30 +231,13 @@ function (kwiver_add_python_module_int    path     modpath    module)
   endif ()
 endfunction ()
 
-###
-# kwiver_add_python_module
-#
-#     Installs a pure-Python module into the 'modpath' and puts it into the
-#     correct place in the build tree so that it may be used with any built
-#     libraries in any build configuration.
-#
-# \param path Path to the python source
-#
-# \param modpath Python module path (e.g. kwiver/processes)
-#
-# \param module Python module name. This is the name used to import the code.
-#
-function (kwiver_add_python_module   path   modpath   module)
-  kwiver_add_python_module_int("${path}"
-    "${modpath}"
-    "${module}")
-endfunction ()
 
 ###
-#   kwiver_create_python_init(modpath [module ...])
 #
-#     Creates an __init__.py package file which imports the modules in the
-#     arguments for the package.
+# kwiver_create_python_init(modpath [module ...])
+#
+# Creates an __init__.py package file which imports the modules in the
+# arguments for the package.
 #
 function (kwiver_create_python_init    modpath)
   _kwiver_create_safe_modpath("${modpath}" safe_modpath)
@@ -253,12 +254,16 @@ function (kwiver_create_python_init    modpath)
     file(APPEND "${init_template}"      "from ${module} import *\n")
   endforeach ()
 
-  kwiver_add_python_module_int("${init_template}"
+  kwiver_add_python_module("${init_template}"
     "${modpath}"
     __init__)
 endfunction ()
 
+
 ###
+#
+# SeeAlso:
+#     ../../sprokit/processes/python/CMakeLists.txt
 #
 function (kwiver_create_python_plugin_init modpath)
   _kwiver_create_safe_modpath("${modpath}" safe_modpath)
@@ -270,10 +275,11 @@ function (kwiver_create_python_plugin_init modpath)
   endif ()
 
   file(WRITE "${init_template}"     "${copyright_header}\n\n")
+  # TODO: Is pkgutil part needed anymore?
   file(APPEND "${init_template}"    "from pkgutil import extend_path\n")
   file(APPEND "${init_template}"    "__path__ = extend_path(__path__, __name__)\n")
 
-  kwiver_add_python_module_int("${init_template}"
+  kwiver_add_python_module("${init_template}"
     "${modpath}"
     __init__)
 endfunction ()

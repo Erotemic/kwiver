@@ -103,9 +103,14 @@ function (sprokit_add_python_library    name    modpath)
 
 endfunction ()
 
+
 ###
 #
-function (sprokit_add_python_module_int    path     modpath    module)
+# SeeAlso:
+#     kwiver/CMake/utils/kwiver-utils-python.cmake
+#
+function (sprokit_add_python_module    path     modpath    module)
+
   _sprokit_create_safe_modpath("${modpath}" safe_modpath)
 
   _kwiver_python_site_package_dir( python_site_packages )
@@ -177,10 +182,6 @@ endfunction ()
 
 ###
 #
-function (sprokit_add_python_module   path   modpath   module)
-  sprokit_add_python_module_int("${path}"
-    "${modpath}"
-    "${module}")
 endfunction ()
 
 ###
@@ -207,10 +208,11 @@ function (sprokit_create_python_init    modpath)
       "from ${module} import *\n")
   endforeach ()
 
-  sprokit_add_python_module_int("${init_template}"
+  sprokit_add_python_module("${init_template}"
     "${modpath}"
     __init__)
 endfunction ()
+
 
 ###
 #
@@ -235,7 +237,7 @@ function (sprokit_create_python_plugin_init modpath)
   file(APPEND "${init_template}"
     "__path__ = extend_path(__path__, __name__)\n")
 
-  sprokit_add_python_module_int("${init_template}"
+  sprokit_add_python_module("${init_template}"
     "${modpath}"
     __init__)
 endfunction ()
