@@ -39,7 +39,8 @@ Interface to KWIVER kwiver_process class.
 from sprokit.pipeline import process
 from sprokit.pipeline import datum
 
-import util.vital_type_converters as VTC
+# import util.vital_type_converters as VTC
+from kwiver.util import vital_type_converters as VTC
 
 # import kwiver_process_utils
 
