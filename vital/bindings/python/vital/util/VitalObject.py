@@ -233,7 +233,6 @@ class VitalObject (object):
                                    % self.__class__.__name__)
 
     def __del__(self):
-        print('ABOUT TO DELETE self = {!r}'.format(self))
         if hasattr(self, '_inst_ptr') and self._inst_ptr is not None:
             self._destroy()
 

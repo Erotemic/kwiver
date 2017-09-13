@@ -55,26 +55,54 @@ SharedPointerCache< kwiver::vital::detected_object_set, vital_detected_object_se
 // ==================================================================
 // These two functions support C++ access to the SPTR_CACHE.
 
+// --- SMART POINTER CONVERSIONS ---
+
+
 /**
- * @brief Accept shared pointer to detected object set.
+ * @brief Accept shared pointer to detected_object_set
  *
  * This function takes a pointer to a shared_pointer and adds it to
- * the SPTR_CACHE in the same way as a constructor (above). This
+ * the SPTR_CACHE in the same way as a constructor. This
  * allows us to manage an already existing object.
  *
  * @param sptr Pointer to shared pointer
  *
  * @return Opaque object pointer/handle
  */
-vital_detected_object_set_t* vital_detected_object_set_from_sptr( kwiver::vital::detected_object_set_sptr sptr )
+// Adopt existing sptr
+vital_detected_object_set_t*
+vital_detected_object_set_from_sptr( kwiver::vital::detected_object_set_sptr sptr, vital_error_handle_t* eh=NULL)
 {
   STANDARD_CATCH(
-    "vital_detected_object_set_from_sptr", 0,
+    "vital_detected_object_set_from_sptr", eh,
+    auto logger = kwiver::vital::get_logger("temp.logger");
+    LOG_INFO(logger, "(from_sptr) sptr = " << sptr );
 
     kwiver::vital_c::DOBJ_SET_SPTR_CACHE.store( sptr );
-    return reinterpret_cast<vital_detected_object_set_t*>( sptr.get() );
-    );
-  return 0;
+    kwiver::vital::detected_object_set* _self = sptr.get();
+    LOG_INFO(logger, "(from_sptr) _self = " << _self );
+    vital_detected_object_set_t* retvar = reinterpret_cast<vital_detected_object_set_t*>( _self );
+    LOG_INFO(logger, "(from_sptr) retvar = " << retvar );
+    return retvar;
+  );
+  return NULL;
+}
+
+
+// Get the kwiver::vital::detected_object_set shared pointer for a handle.
+kwiver::vital::detected_object_set_sptr
+vital_detected_object_set_to_sptr( vital_detected_object_set_t* self, vital_error_handle_t* eh )
+{
+  STANDARD_CATCH(
+    "vital_detected_object_set_to_sptr", eh,
+    // Return the cached shared pointer.
+    auto logger = kwiver::vital::get_logger("temp.logger");
+    LOG_INFO(logger, "(to_sptr) self = " << self );
+    kwiver::vital::detected_object_set_sptr retvar = kwiver::vital_c::DOBJ_SET_SPTR_CACHE.get( self );
+    LOG_INFO(logger, "(to_sptr) retvar = " << retvar );
+    return retvar;
+  );
+  return kwiver::vital::detected_object_set_sptr();
 }
 
 
@@ -87,17 +115,6 @@ vital_detected_object_set_t* vital_detected_object_set_from_c_pointer( kwiver::v
     return reinterpret_cast<vital_detected_object_set_t*>( ptr );
     );
   return 0;
-}
-
-
-kwiver::vital::detected_object_set_sptr vital_detected_object_set_to_sptr( vital_detected_object_set_t* handle )
-{
-  STANDARD_CATCH(
-    "vital_detected_object_set_to_sptr", 0,
-
-    return kwiver::vital_c::DOBJ_SET_SPTR_CACHE.get( handle );
-    );
-  return kwiver::vital::detected_object_set_sptr();
 }
 
 
@@ -146,6 +163,8 @@ void
 vital_detected_object_set_destroy( vital_detected_object_set_t* self, vital_error_handle_t* eh=NULL )
 {
   STANDARD_CATCH("vital_detected_object_set_destroy", eh,
+    //auto logger = kwiver::vital::get_logger("temp.logger");
+    //LOG_INFO(logger, "self = " << self );
     kwiver::vital_c::DOBJ_SET_SPTR_CACHE.erase( self );
   );
 }

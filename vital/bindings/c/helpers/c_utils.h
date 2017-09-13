@@ -46,6 +46,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <mutex>
 
 #include <vital/bindings/c/error_handle.h>
 #include <vital/exceptions/base.h>
@@ -222,6 +223,7 @@ public:
   /// Store a shared pointer
   void store( sptr_t sptr )
   {
+    std::lock_guard<std::mutex> lock(refcount_mutex);
     if( sptr.get() == NULL )
     {
       std::ostringstream ss;
@@ -278,6 +280,7 @@ public:
   /// Erase an entry in the cache by vital-type pointer
   void erase( vital_t const *ptr )
   {
+    std::lock_guard<std::mutex> lock(refcount_mutex);
     if( ptr == NULL )
     {
       std::ostringstream ss;
@@ -285,10 +288,14 @@ public:
       throw NullPointerException(ss.str());
     }
 
+    auto logger = kwiver::vital::get_logger("temp.logger");
+
     typename cache_t::iterator c_it = cache_.find( ptr );
     if( c_it != cache_.end() )
     {
+      LOG_INFO(logger, "ptr = " << ptr << " C-refcount:" << ref_count_cache_[ptr] );
       --ref_count_cache_[ptr];
+
       // Only finally erase cache entry when store references reaches 0
       if( ref_count_cache_[ptr] <= 0 )
       {
@@ -297,6 +304,9 @@ public:
         cache_.erase(c_it);
         ref_count_cache_.erase(ptr);
       }
+    }
+    else{
+        LOG_INFO(logger, "ptr = " << ptr << " CACHE MISS" );
     }
   }
 
@@ -346,6 +356,8 @@ private:
   ref_count_cache_t ref_count_cache_;
   /// Name of cache
   std::string name_;
+
+  std::mutex refcount_mutex;
 
   /// Helper method to generate logging prefix string
   std::string get_log_prefix( vital_t const *ptr ) const

@@ -31,6 +31,18 @@
 /**
  * \file
  * \brief Implementation of vital::descriptor_set interface
+ *
+ */
+
+
+/*
+###
+#
+
+AUTOGEN HELPER;
+  export PYTHONPATH=$PYTHONPATH:$HOME/code/VIAME/packages/kwiver/vital/bindings
+  python -m c_introspect VitalTypeIntrospectCxx:0 --class=detected_object_set
+
  */
 
 #include "descriptor_set.h"
@@ -76,21 +88,6 @@ vital_descriptor_set_new( vital_descriptor_t const **d_array,
     // Create a new simple_descriptor_set using the given descriptors, if any.
     auto ds_sptr =
       std::make_shared< vital::simple_descriptor_set >( descriptor_sptr_vec );
-    vital_c::DESCRIPTOR_SET_SPTR_CACHE.store( ds_sptr );
-    return reinterpret_cast< vital_descriptor_set_t* >( ds_sptr.get() );
-  );
-  return NULL;
-}
-
-
-/// Create a vital_descriptor_set_t around an existing shared pointer.
-vital_descriptor_set_t*
-vital_descriptor_set_new_from_sptr( kwiver::vital::descriptor_set_sptr ds_sptr,
-                                    vital_error_handle_t* eh )
-{
-  STANDARD_CATCH(
-    "vital_descriptor_set_new_from_sptr", eh,
-    // Store the shared pointer in our cache and return the handle.
     vital_c::DESCRIPTOR_SET_SPTR_CACHE.store( ds_sptr );
     return reinterpret_cast< vital_descriptor_set_t* >( ds_sptr.get() );
   );
@@ -152,6 +149,24 @@ vital_descriptor_set_get_descriptors( vital_descriptor_set_t const *ds,
     *out_d_array = d_array;
     *out_d_array_length = descriptor_sptr_vec.size();
   );
+}
+
+
+// --- SMART POINTER CONVERSIONS ---
+
+
+/// Create a vital_descriptor_set_t around an existing shared pointer.
+vital_descriptor_set_t*
+vital_descriptor_set_new_from_sptr( kwiver::vital::descriptor_set_sptr ds_sptr,
+                                    vital_error_handle_t* eh )
+{
+  STANDARD_CATCH(
+    "vital_descriptor_set_new_from_sptr", eh,
+    // Store the shared pointer in our cache and return the handle.
+    vital_c::DESCRIPTOR_SET_SPTR_CACHE.store( ds_sptr );
+    return reinterpret_cast< vital_descriptor_set_t* >( ds_sptr.get() );
+  );
+  return NULL;
 }
 
 

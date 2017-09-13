@@ -45,6 +45,10 @@ class DetectedObjectSet (VitalObject):
     """
     vital::detected_object_set interface class
 
+    Developer:
+        export PYTHONPATH=$PYTHONPATH:/home/joncrall/code/VIAME/packages/kwiver/vital/bindings
+        python -m c_introspect VitalTypeIntrospectCxx:0 --class=detected_object_set
+
     SeeAlso:
         ../../../c/types/detected_object_set.h
         ../../types/detected_object_set.h

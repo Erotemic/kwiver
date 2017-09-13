@@ -132,7 +132,18 @@ VITAL_C_BINDING_HXX_FILE = ub.codeblock(
 
 VITAL_BINDING_FROM_SPTR_CONVERSION = ub.codeblock(
     r'''
-    /// Adopt existing sptr
+    /**
+     * @brief Accept shared pointer to {cxx_classname}
+     *
+     * This function takes a pointer to a shared_pointer and adds it to
+     * the SPTR_CACHE in the same way as a constructor. This
+     * allows us to manage an already existing object.
+     *
+     * @param sptr Pointer to shared pointer
+     *
+     * @return Opaque object pointer/handle
+     */
+    // Adopt existing sptr
     {c_type}
     vital_{cxx_classname}_from_sptr( {sptr_type} sptr, vital_error_handle_t* eh=NULL)
     {{
@@ -148,7 +159,7 @@ VITAL_BINDING_FROM_SPTR_CONVERSION = ub.codeblock(
 
 VITAL_BINDING_TO_SPTR_CONVERSION = ub.codeblock(
     r'''
-    /// Get the kwiver::vital::{cxx_classname} shared pointer for a handle.
+    // Get the kwiver::vital::{cxx_classname} shared pointer for a handle.
     {sptr_type}
     vital_{cxx_classname}_to_sptr( {c_type} self, vital_error_handle_t* eh )
     {{

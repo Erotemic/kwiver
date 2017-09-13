@@ -47,11 +47,11 @@
 
 // Adopt previously created image container
 VITAL_C_EXPORT
-vital_detected_object_set_t* vital_detected_object_set_from_sptr( kwiver::vital::detected_object_set_sptr sptr );
+vital_detected_object_set_t* vital_detected_object_set_from_sptr( kwiver::vital::detected_object_set_sptr sptr, vital_error_handle_t* eh );
 
 // Return sptr from handle
 VITAL_C_EXPORT
-kwiver::vital::detected_object_set_sptr vital_detected_object_set_to_sptr( vital_detected_object_set_t* handle );
+kwiver::vital::detected_object_set_sptr vital_detected_object_set_to_sptr( vital_detected_object_set_t* handle, vital_error_handle_t* eh );
 
 
 #endif // VITAL_C_DETECTED_OBJECT_SET_HXX_

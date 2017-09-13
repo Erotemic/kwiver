@@ -107,19 +107,113 @@ put_in_datum_capsule( T value )
 } // end anon namespace
 
 
+// Allows for comments inside macros
+#define __MACRO_COMMENT__(s) ;
+
 // ------------------------------------------------------------------
 //
 // A shortcut for defining convertors for vital types
 //
+
 #define VITAL_FROM_DATUM( CXX_CLASS_NAME, CXX_SPTR_TYPE, C_TYPE )                          \
-C_TYPE vital_##CXX_CLASS_NAME##_from_datum( PyObject* args )                               \
+C_TYPE vital_ ## CXX_CLASS_NAME ## _from_datum( PyObject *args )                            \
+{                                                                                          \
+  __MACRO_COMMENT__(Get capsule from args - or arg may be the capsule)                     \
+  sprokit::datum* dptr = (sprokit::datum*) PyCapsule_GetPointer( args, "sprokit::datum" ); \
+  C_TYPE handle = NULL;                                                                   \
+  vital_error_handle_t* eh = NULL;                                                         \
+                                                                                           \
+  try                                                                                      \
+  {                                                                                        \
+    boost::any const any = dptr->get_datum< boost::any >();                                \
+    CXX_SPTR_TYPE sptr =                                                                   \
+      boost::any_cast< CXX_SPTR_TYPE >( any );                                             \
+                                                                                           \
+    eh = vital_eh_new();                                                                   \
+    if( NULL == eh )                                                                       \
+    {                                                                                      \
+      throw "Failed to create vital error handle.";                                        \
+    }                                                                                      \
+                                                                                           \
+    __MACRO_COMMENT__(Create vital C type handle from sptr.)                               \
+    handle = vital_ ## CXX_CLASS_NAME ## _from_sptr( sptr, eh );                           \
+                                                                                           \
+    if( eh->error_code != 0 )                                                              \
+    {                                                                                      \
+      handle = NULL;                                                                       \
+      throw eh->message;                                                                   \
+    }                                                                                      \
+  }                                                                                        \
+  catch( boost::bad_any_cast const& e )                                                    \
+  {                                                                                        \
+    __MACRO_COMMENT__(                                                                     \
+        "This is a warning because this converter should only be called"                   \
+        "if there is good reason to believe that the object really is an"                  \
+        "track_set.")                                                                      \
+    LOG_WARN( logger, "Conversion error " << e.what() );                                   \
+  }                                                                                        \
+  catch( char const* e )                                                                   \
+  {                                                                                        \
+    LOG_WARN( logger, "vital handled error: " << e );                                      \
+  }                                                                                        \
+                                                                                           \
+  __MACRO_COMMENT__(Destroy handle instance if one was created.)                           \
+  vital_eh_destroy( eh );                                                                  \
+                                                                                           \
+  return handle;                                                                           \
+}                                                                                          \
+
+
+
+#define VITAL_TO_DATUM( CXX_CLASS_NAME, CXX_SPTR_TYPE, C_TYPE )                   \
+PyObject* vital_ ## CXX_CLASS_NAME ## _to_datum( C_TYPE vital_ds )                \
+{                                                                                 \
+  vital_error_handle_t* eh = vital_eh_new();                                      \
+  if( eh )                                                                        \
+  {                                                                               \
+    __MACRO_COMMENT__("Get sptr from the membrane cache with the given handle.")  \
+    CXX_SPTR_TYPE sptr = vital_ ## CXX_CLASS_NAME ## _to_sptr( vital_ds, eh );    \
+                                                                                  \
+    if( eh->error_code )                                                          \
+    {                                                                             \
+      LOG_WARN( logger, "Failed to get shared pointer for descriptor_set handle:" \
+                        << eh->message);                                          \
+    }                                                                             \
+    else                                                                          \
+    {                                                                             \
+      __MACRO_COMMENT__("Free error handle instance before return")               \
+      vital_eh_destroy( eh );                                                     \
+      __MACRO_COMMENT__("Wrap sptr in a datum in a PyCapsule")                    \
+      __MACRO_COMMENT__("The caller now owns the datum.")                         \
+      return put_in_datum_capsule( sptr );                                        \
+    }                                                                             \
+  }                                                                               \
+  else                                                                            \
+  {                                                                               \
+    LOG_WARN( logger, "Failed to allocate vital error handle" );                  \
+  }                                                                               \
+                                                                                  \
+  __MACRO_COMMENT__("Free error handle instance before return")                   \
+  vital_eh_destroy( eh );                                                         \
+                                                                                  \
+  Py_RETURN_NONE;                                                                 \
+}                                                                                 \
+
+
+// ------------------------------------------------------------------
+//
+// A shortcut for defining convertors for vital types
+//
+/*
+#define VITAL_FROM_DATUM( CXX_CLASS_NAME, CXX_SPTR_TYPE, C_TYPE )                          \
+C_TYPE vital_ ## CXX_CLASS_NAME ## _from_datum( PyObject* args )                           \
 {                                                                                          \
   sprokit::datum* dptr = (sprokit::datum*) PyCapsule_GetPointer( args, "sprokit::datum" ); \
   try                                                                                      \
   {                                                                                        \
     boost::any const any = dptr->get_datum< boost::any > ();                               \
     CXX_SPTR_TYPE sptr = boost::any_cast< CXX_SPTR_TYPE > ( any );                         \
-    C_TYPE ptr =  vital_##CXX_CLASS_NAME##_from_sptr( sptr, NULL );                        \
+    C_TYPE ptr =  vital_ ## CXX_CLASS_NAME ## _from_sptr( sptr, NULL );                    \
     return ptr;                                                                            \
   }                                                                                        \
   catch ( boost::bad_any_cast const& e )                                                   \
@@ -130,18 +224,18 @@ C_TYPE vital_##CXX_CLASS_NAME##_from_datum( PyObject* args )                    
 }                                                                                          \
 
 
-#define VITAL_TO_DATUM( CXX_CLASS_NAME, CXX_SPTR_TYPE, C_TYPE )          \
-PyObject*                                                                \
-vital_##CXX_CLASS_NAME##_to_datum( C_TYPE handle )                               \
-{                                                                        \
-  CXX_SPTR_TYPE sptr = vital_##CXX_CLASS_NAME##_to_sptr( handle, NULL ); \
-  if ( ! sptr )                                                          \
-  {                                                                      \
-    Py_RETURN_NONE;                                                      \
-  }                                                                      \
-  PyObject* cap = put_in_datum_capsule( sptr );                          \
-  return cap;                                                            \
-}                                                                        \
+#define VITAL_TO_DATUM( CXX_CLASS_NAME, CXX_SPTR_TYPE, C_TYPE )              \
+PyObject* vital_ ## CXX_CLASS_NAME ## _to_datum( C_TYPE handle )             \
+{                                                                            \
+  CXX_SPTR_TYPE sptr = vital_ ## CXX_CLASS_NAME ## _to_sptr( handle, NULL ); \
+  if ( ! sptr )                                                              \
+  {                                                                          \
+    Py_RETURN_NONE;                                                          \
+  }                                                                          \
+  PyObject* cap = put_in_datum_capsule( sptr );                              \
+  return cap;                                                                \
+}                                                                            \
+*/
 
 
 VITAL_FROM_DATUM(camera, kwiver::vital::camera_sptr, vital_camera_t*)
@@ -235,34 +329,37 @@ vital_image_container_to_datum( vital_image_container_t* handle )
  *
  * @return detected object set handle
  */
-vital_detected_object_set_t*
-vital_detected_object_set_from_datum( PyObject* args )
-{
-  // arg is the capsule
-  sprokit::datum* dptr = (sprokit::datum*) PyCapsule_GetPointer( args, "sprokit::datum" );
+VITAL_FROM_DATUM(detected_object_set, kwiver::vital::detected_object_set_sptr, vital_detected_object_set_t*)
 
-  try
-  {
-    // Get boost::any from the datum
-    boost::any const any = dptr->get_datum< boost::any > ();
 
-    // Get sptr from boost::any
-    kwiver::vital::detected_object_set_sptr sptr = boost::any_cast< kwiver::vital::detected_object_set_sptr > ( any );
+//vital_detected_object_set_t*
+//vital_detected_object_set_from_datum( PyObject* args )
+//{
+//  // arg is the capsule
+//  sprokit::datum* dptr = (sprokit::datum*) PyCapsule_GetPointer( args, "sprokit::datum" );
 
-    // Register this object with the main detected_object_set interface
-    vital_detected_object_set_t* ptr = vital_detected_object_set_from_sptr( sptr );
-    return ptr;
-  }
-  catch ( boost::bad_any_cast const& e )
-  {
-    // This is a warning because this converter should only be called
-    // if there is good reason to believe that the object really is an
-    // detected_object_set.
-    LOG_WARN( logger, "Conversion error" << e.what() );
-  }
+//  try
+//  {
+//    // Get boost::any from the datum
+//    boost::any const any = dptr->get_datum< boost::any > ();
 
-  return NULL;
-}
+//    // Get sptr from boost::any
+//    kwiver::vital::detected_object_set_sptr sptr = boost::any_cast< kwiver::vital::detected_object_set_sptr > ( any );
+
+//    // Register this object with the main detected_object_set interface
+//    vital_detected_object_set_t* ptr = vital_detected_object_set_from_sptr( sptr );
+//    return ptr;
+//  }
+//  catch ( boost::bad_any_cast const& e )
+//  {
+//    // This is a warning because this converter should only be called
+//    // if there is good reason to believe that the object really is an
+//    // detected_object_set.
+//    LOG_WARN( logger, "Conversion error" << e.what() );
+//  }
+
+//  return NULL;
+//}
 
 
 // ------------------------------------------------------------------
@@ -273,23 +370,25 @@ vital_detected_object_set_from_datum( PyObject* args )
  *
  * @return boost::python wrapped Pointer to PyCapsule as PyObject.
  */
-PyObject*
-vital_detected_object_set_to_datum( vital_detected_object_set_t* handle )
-{
-  // Get sptr from handle. Use sptr cache access interface
-  kwiver::vital::detected_object_set_sptr sptr = vital_detected_object_set_to_sptr( handle );
+VITAL_TO_DATUM(  detected_object_set, kwiver::vital::detected_object_set_sptr, vital_detected_object_set_t*)
 
-  if ( ! sptr )
-  {
-    // Could not find sptr for supplied handle.
-    Py_RETURN_NONE;
-  }
+//PyObject*
+//vital_detected_object_set_to_datum( vital_detected_object_set_t* handle )
+//{
+//  // Get sptr from handle. Use sptr cache access interface
+//  kwiver::vital::detected_object_set_sptr sptr = vital_detected_object_set_to_sptr( handle );
 
-  // Return address of datum through PyCapsule object.
-  // The caller now owns the datum.
-  PyObject* cap = put_in_datum_capsule( sptr );
-  return cap;
-}
+//  if ( ! sptr )
+//  {
+//    // Could not find sptr for supplied handle.
+//    Py_RETURN_NONE;
+//  }
+
+//  // Return address of datum through PyCapsule object.
+//  // The caller now owns the datum.
+//  PyObject* cap = put_in_datum_capsule( sptr );
+//  return cap;
+//}
 
 
 // ==================================================================
