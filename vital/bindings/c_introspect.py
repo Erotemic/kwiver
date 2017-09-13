@@ -26,6 +26,7 @@ To generate bindings for a type:
 from os.path import expanduser, join
 import re
 import ubelt as ub
+import c_patterns   # NOQA
 from c_patterns import CPatternMatch, CArgspec, CArg, CType
 from c_patterns import named, VARNAME
 import fmt_templates
@@ -49,6 +50,7 @@ class VitalRegistry(object):
         'feature': 'FEATURE_SPTR_CACHE',
         'detected_object': 'DOBJ_SPTR_CACHE',
         'detected_object_type': 'DOT_SPTR_CACHE',
+        'detected_object_set': 'DOBJ_SET_SPTR_CACHE',
         'camera': 'CAMERA_SPTR_CACHE',
     }
 
@@ -67,6 +69,7 @@ class VitalRegistry(object):
         'bounding_box',
         'bounding_box_d',
         'detected_object_type',
+        'detected_object_set',
     }
 
     special_cxx_to_c = {
@@ -469,6 +472,21 @@ class VitalTypeIntrospectCxx(object):
                 // --- CONSTRUCTORS ---
                 ''')] + init_parts
 
+        destroy_parts = []
+        if funcnames is None or '__del__' in funcnames:
+            info = c_patterns.MethodInfo({
+                'cxx_funcname': 'destroy',
+                'argspec': '',
+                'return_type': 'void',
+            })
+            text = self.autogen_vital_method_c(info, fmtdict, is_destructor=True)
+            destroy_parts.append(text)
+        if destroy_parts:
+            parts += [ub.codeblock(
+                '''
+                // --- DESTROY ---
+                ''')] + destroy_parts
+
         method_parts = []
         for n, info in enumerate(self.cxx_method_infos):
             if funcnames is None or info['cxx_funcname'] in funcnames:
@@ -639,12 +657,14 @@ class VitalTypeIntrospectCxx(object):
 
         text = self.autogen_vital_method_c(
             info, fmtdict, c_funcname=c_funcname,
-            is_constructor=True, needs_self=False
+            is_constructor=True,
+            needs_self=False
         )
         return text
 
     def autogen_vital_method_c(self, info, fmtdict, c_funcname=None,
-                               is_constructor=False, needs_self=True):
+                               is_constructor=False, is_destructor=False,
+                               needs_self=True):
         # TODO: handle outvars
         c_bind_method = ub.codeblock(
             '''
@@ -661,12 +681,12 @@ class VitalTypeIntrospectCxx(object):
         c_bind_method_body = ub.codeblock(
             '''
             REM // --- Convert C arguments to C++ ---
-            {convert_cxx_to_c}
+            {convert_args_c_to_cxx}
             REM // --- Call C++ function ---
-            {call_cxx_func}
+            {call_func_cxx}
             REM // --- Convert C++ return value to C ---
-            {convert_return}
-            {return_c_var}
+            {convert_return_cxx_to_c}
+            {return_var_c}
             ''')
 
         def block_indent(block, n=4):
@@ -693,8 +713,11 @@ class VitalTypeIntrospectCxx(object):
             self_cxx_arg.check_null = False
             argsepc.args.insert(0, self_cxx_arg)
 
-        convert_cxx_to_c = '\n'.join(
-            [str(carg.c_to_cxx()) for carg in argsepc.args])
+        if is_destructor:
+            convert_args_c_to_cxx = 'REM'
+        else:
+            convert_args_c_to_cxx = '\n'.join(
+                [str(carg.c_to_cxx()) for carg in argsepc.args])
 
         # Hack: add in error handling
         error_handling = True
@@ -705,45 +728,55 @@ class VitalTypeIntrospectCxx(object):
 
         c_argspec = ', '.join([carg.c_spec() for carg in argsepc.args])
         if returns_none:
-            convert_return = BLANK_LINE_PLACEHOLDER
-            return_c_var = BLANK_LINE_PLACEHOLDER
+            convert_return_cxx_to_c = BLANK_LINE_PLACEHOLDER
+            return_var_c = BLANK_LINE_PLACEHOLDER
             return_error = BLANK_LINE_PLACEHOLDER
         else:
-            convert_return = return_arg.cxx_to_c()
-            return_c_var = 'return retvar;'
+            convert_return_cxx_to_c = return_arg.cxx_to_c()
+            return_var_c = 'return retvar;'
             return_error = 'return NULL;'
 
         # if call_cxx_func_fmt is None:
-        if is_constructor:
+        if is_destructor:
+            # cxx_ns = 'kwiver::vital::'
+            # fmtdict['cxx_pointed_type'] = cxx_ns + str(self_cxx_arg.smart_type())
+            # call_func_cxx = 'std::make_shared< {cxx_pointed_type} >( self );'.format(**fmtdict)
+            # kwiver::vital_c::DOBJ_SET_SPTR_CACHE.erase( obj )
+            SPTR_CACHE = VitalRegistry.get_sptr_cachename(fmtdict['cxx_classname'])
+            # SPTR_CACHE = VitalRegistry.get_sptr_cachename(self_cxx_arg)
+            call_func_cxx = '{SPTR_CACHE}.erase( {c_name} );'.format(SPTR_CACHE=SPTR_CACHE,
+                                                                     c_name='self',
+                                                                     **fmtdict)
+        elif is_constructor:
             cxx_ns = 'kwiver::vital::'
             fmtdict['cxx_pointed_type'] = cxx_ns + str(return_arg.smart_type())
-            call_cxx_func = 'std::make_shared< {cxx_pointed_type} >( {cxx_callargs} );'.format(**fmtdict)
+            call_func_cxx = 'std::make_shared< {cxx_pointed_type} >( {cxx_callargs} );'.format(**fmtdict)
         else:
-            call_cxx_func = '_self->{cxx_funcname}({cxx_callargs});'.format(**fmtdict)
+            call_func_cxx = '_self->{cxx_funcname}({cxx_callargs});'.format(**fmtdict)
         if not returns_none:
             cxx_ret_name = return_arg.cxx_name()
             cxx_ret_type = 'auto'
             cxx_ns = 'kwiver::vital::'
             cxx_ret_type = cxx_ns + str(return_arg.type)
-            call_cxx_func = '{} {} = {}'.format(cxx_ret_type, cxx_ret_name,
-                                                call_cxx_func)
+            call_func_cxx = '{} {} = {}'.format(cxx_ret_type, cxx_ret_name,
+                                                call_func_cxx)
             if return_arg.is_smart():
                 # Make sure the external refcount is increased whenever we
                 # return a smart pointer from the C-API.
                 pointed_type = return_arg.smart_type()
                 SPTR_CACHE = VitalRegistry.get_sptr_cachename(
                     pointed_type)
-                call_cxx_func += '\n{SPTR_CACHE}.store( {cxx_name} );'.format(
+                call_func_cxx += '\n{SPTR_CACHE}.store( {cxx_name} );'.format(
                     SPTR_CACHE=SPTR_CACHE, cxx_name=cxx_ret_name
                 )
         # else:
-        #     call_cxx_func = call_cxx_func_fmt.format(**fmtdict)
+        #     call_func_cxx = call_cxx_func_fmt.format(**fmtdict)
 
         method_body = c_bind_method_body.format(
-            convert_return=convert_return,
-            return_c_var=return_c_var,
-            call_cxx_func=call_cxx_func,
-            convert_cxx_to_c=convert_cxx_to_c,
+            convert_return_cxx_to_c=convert_return_cxx_to_c,
+            return_var_c=return_var_c,
+            call_func_cxx=call_func_cxx,
+            convert_args_c_to_cxx=convert_args_c_to_cxx,
             **fmtdict
         )
 

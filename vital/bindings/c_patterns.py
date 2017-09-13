@@ -298,6 +298,9 @@ class CType(ub.NiceRepr):
 
 
 class MethodInfo(ub.NiceRepr):
+    """
+    input dict should contain cxx_funcname, return_type, and argspec
+    """
     def __init__(self, info):
         d = info
         if d.get('argspec', None) is not None:
