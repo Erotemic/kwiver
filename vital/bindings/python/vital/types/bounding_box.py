@@ -37,12 +37,10 @@ import ctypes
 
 from vital.util import VitalObject
 from vital.util import VitalErrorHandle  # NOQA
-from vital.util.mixins import NiceRepr
-
 from vital.util import free_void_ptr
 
 
-class BoundingBox (VitalObject, NiceRepr):
+class BoundingBox (VitalObject):
     """
     vital::detected_object_ interface class
 
@@ -247,15 +245,15 @@ class BoundingBox (VitalObject, NiceRepr):
             return cls(*data)
         return super(BoundingBox, cls).cast(data)
 
-    def __nice__(self):
-        """
-        Example:
-            >>> from vital.types import BoundingBox
-            >>> self = BoundingBox.from_vectors((0, 0), (5, 10))
-            >>> str(self)
-            <BoundingBox([0.0, 0.0, 5.0, 10.0])>
-        """
-        return str(self.coords)
+    # def __nice__(self):
+    #     """
+    #     Example:
+    #         >>> from vital.types import BoundingBox
+    #         >>> self = BoundingBox.from_vectors((0, 0), (5, 10))
+    #         >>> str(self)
+    #         <BoundingBox([0.0, 0.0, 5.0, 10.0])>
+    #     """
+    #     return str(self.coords)
 
     @classmethod
     def from_vectors(cls, ul, lr):

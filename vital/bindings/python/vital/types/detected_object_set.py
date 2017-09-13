@@ -39,10 +39,9 @@ from vital.types import DetectedObject
 from vital.util import free_void_ptr
 from vital.util import VitalObject
 from vital.util import VitalErrorHandle
-from vital.util.mixins import NiceRepr
 
 
-class DetectedObjectSet (VitalObject, NiceRepr):
+class DetectedObjectSet (VitalObject):
     """
     vital::detected_object_set interface class
 
@@ -140,6 +139,3 @@ class DetectedObjectSet (VitalObject, NiceRepr):
 
         free_void_ptr( c_output )
         return output
-
-    def __nice__(self):
-        return str(self.size())

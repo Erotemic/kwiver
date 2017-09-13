@@ -39,7 +39,7 @@ from vital.util import VitalObject
 from vital.util.VitalObject import VITAL_LIB
 from vital.util import VitalErrorHandle
 from vital.util import free_void_ptr
-from vital.util.mixins import NiceRepr
+# from vital.util.mixins import NiceRepr
 
 from vital.types import ImageContainer
 from vital.types import BoundingBox
@@ -54,7 +54,7 @@ def define_detected_object_c_api():
     """
 
 
-class DetectedObject (VitalObject, NiceRepr):
+class DetectedObject (VitalObject):
     """
     vital::detected_object interface class
 
@@ -233,21 +233,21 @@ class DetectedObject (VitalObject, NiceRepr):
 
     # --- Python convineince functions ---
 
-    def __nice__(self):
-        """
-        Example:
-            >>> from vital.types import DetectedObject
-            >>> self = DetectedObject([(0, 0), (5, 10)])
-            >>> str(self)
-            <DetectedObject([0.0, 0.0, 5.0, 10.0], 0.0)>
-        """
-        conf = self.confidence()
-        # FIXME: get types working correctly
-        # name = self.type().most_likely_class()
-        # name = '?type?'
-        bbox = self.bounding_box().coords
-        return '{}, {}'.format(bbox, conf)
-        # return '{}, {}, {}'.format(bbox, name, conf)
+    # def __nice__(self):
+    #     """
+    #     Example:
+    #         >>> from vital.types import DetectedObject
+    #         >>> self = DetectedObject([(0, 0), (5, 10)])
+    #         >>> str(self)
+    #         <DetectedObject([0.0, 0.0, 5.0, 10.0], 0.0)>
+    #     """
+    #     conf = self.confidence()
+    #     # FIXME: get types working correctly
+    #     # name = self.type().most_likely_class()
+    #     # name = '?type?'
+    #     bbox = self.bounding_box().coords
+    #     return '{}, {}'.format(bbox, conf)
+    #     # return '{}, {}, {}'.format(bbox, name, conf)
 
 
 if __name__ == '__main__':

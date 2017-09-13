@@ -39,7 +39,6 @@ from vital.types import Feature
 from vital.util import free_void_ptr
 from vital.util import VitalObject
 from vital.util import VitalErrorHandle
-from vital.util.mixins import NiceRepr
 
 
 VITAL_LIB = VitalObject.VITAL_LIB
@@ -111,7 +110,7 @@ def define_feature_set_c_api():
     return C
 
 
-class FeatureSet (VitalObject, NiceRepr):
+class FeatureSet (VitalObject):
     """
     vital::feature_set interface class
 
@@ -153,9 +152,6 @@ class FeatureSet (VitalObject, NiceRepr):
     def size(self):
         with VitalErrorHandle() as eh:
             return self.C.size(self, eh)
-
-    def __nice__(self):
-        return str(self.size())
 
 
 FeatureSet.C = define_feature_set_c_api()
