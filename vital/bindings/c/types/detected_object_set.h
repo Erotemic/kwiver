@@ -61,7 +61,7 @@ vital_detected_object_set_t* vital_detected_object_set_new_from_list( vital_dete
                                                                       size_t n);
 
 VITAL_C_EXPORT
-void vital_detected_object_set_destroy( vital_detected_object_set_t* obj);
+void vital_detected_object_set_destroy( vital_detected_object_set_t* obj, vital_error_handle_t* eh);
 
 VITAL_C_EXPORT
 void vital_detected_object_set_add( vital_detected_object_set_t* set,

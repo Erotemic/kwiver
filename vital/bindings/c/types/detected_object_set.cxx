@@ -140,15 +140,14 @@ vital_detected_object_set_new_from_list( vital_detected_object_t**  dobj,
 }
 
 
+
 // ------------------------------------------------------------------
-void vital_detected_object_set_destroy( vital_detected_object_set_t* obj)
+void
+vital_detected_object_set_destroy( vital_detected_object_set_t* self, vital_error_handle_t* eh=NULL )
 {
-  STANDARD_CATCH(
-    "vital_detected_object_set_destroy", 0,
-
-    kwiver::vital_c::DOBJ_SET_SPTR_CACHE.erase( obj );
+  STANDARD_CATCH("vital_detected_object_set_destroy", eh,
+    kwiver::vital_c::DOBJ_SET_SPTR_CACHE.erase( self );
   );
-
 }
 
 
