@@ -1,5 +1,5 @@
 /*ckwg +29
- * Copyright 2015-2017 by Kitware, Inc.
+ * Copyright 2017 by Kitware, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,49 +28,55 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * \file
- * \brief Image display process interface.
- */
+#ifndef _KWIVER_ASSOCIATE_DETECTIONS_TO_TRACKS_PROCESS_H_
+#define _KWIVER_ASSOCIATE_DETECTIONS_TO_TRACKS_PROCESS_H_
 
-#ifndef _KWIVER_READ_DESCRIPTOR_PROCESS_H
-#define _KWIVER_READ_DESCRIPTOR_PROCESS_H
+#include "kwiver_processes_export.h"
 
 #include <sprokit/pipeline/process.h>
-#include "kwiver_processes_export.h"
 
 #include <memory>
 
 namespace kwiver
 {
 
-// -------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 /**
- * @brief Display images
+ * \class associate_detections_to_tracks_process
  *
+ * \brief Associates new object detections to existing tracks.
+ *
+ * \iports
+ * \iport{timestamp}
+ * \iport{image}
+ * \iport{tracks}
+ * \iport{detections}
+ * \iport{matrix_d}
+ *
+ * \oports
+ * \oport{tracks}
+ * \oport{unused_detections}
+ * \oport{all_detections}
  */
-class KWIVER_PROCESSES_NO_EXPORT read_descriptor_process
+class KWIVER_PROCESSES_NO_EXPORT associate_detections_to_tracks_process
   : public sprokit::process
 {
-public:
-  // -- CONSTRUCTORS --
-  read_descriptor_process( kwiver::vital::config_block_sptr const& config );
-  virtual ~read_descriptor_process();
+  public:
+  associate_detections_to_tracks_process( vital::config_block_sptr const& config );
+  virtual ~associate_detections_to_tracks_process();
 
-protected:
-  virtual void _configure();
-  virtual void _step();
+  protected:
+    virtual void _configure();
+    virtual void _step();
 
-private:
-  void make_ports();
-  void make_config();
+  private:
+    void make_ports();
+    void make_config();
 
+    class priv;
+    const std::unique_ptr<priv> d;
+ }; // end class associate_detections_to_tracks_process
 
-  class priv;
-  const std::unique_ptr<priv> d;
-
-}; // end class read_descriptor_process
 
 } // end namespace
-
-#endif /* _KWIVER_READ_DESCRIPTOR_PROCESS_H */
+#endif /* _KWIVER_ASSOCIATE_DETECTIONS_TO_TRACKS_PROCESS_H_ */

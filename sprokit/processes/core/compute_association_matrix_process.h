@@ -1,5 +1,5 @@
 /*ckwg +29
- * Copyright 2015-2017 by Kitware, Inc.
+ * Copyright 2017 by Kitware, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,49 +28,55 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * \file
- * \brief Image display process interface.
- */
+#ifndef _KWIVER_COMPUTE_ASSOCIATION_MATRIX_PROCESS_H_
+#define _KWIVER_COMPUTE_ASSOCIATION_MATRIX_PROCESS_H_
 
-#ifndef _KWIVER_READ_DESCRIPTOR_PROCESS_H
-#define _KWIVER_READ_DESCRIPTOR_PROCESS_H
+#include "kwiver_processes_export.h"
 
 #include <sprokit/pipeline/process.h>
-#include "kwiver_processes_export.h"
 
 #include <memory>
 
 namespace kwiver
 {
 
-// -------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 /**
- * @brief Display images
+ * \class compute_association_matrix_process
  *
+ * \brief Generates association matrix between old tracks and new detections
+ *        for use in object tracking.
+ *
+ * \iports
+ * \iport{timestamp}
+ * \iport{image}
+ * \iport{tracks}
+ * \iport{detections}
+ *
+ * \oports
+ * \oport{matrix_d}
+ * \oport{tracks}
+ * \oport{detections}
  */
-class KWIVER_PROCESSES_NO_EXPORT read_descriptor_process
+class KWIVER_PROCESSES_NO_EXPORT compute_association_matrix_process
   : public sprokit::process
 {
-public:
-  // -- CONSTRUCTORS --
-  read_descriptor_process( kwiver::vital::config_block_sptr const& config );
-  virtual ~read_descriptor_process();
+  public:
+  compute_association_matrix_process( vital::config_block_sptr const& config );
+  virtual ~compute_association_matrix_process();
 
-protected:
-  virtual void _configure();
-  virtual void _step();
+  protected:
+    virtual void _configure();
+    virtual void _step();
 
-private:
-  void make_ports();
-  void make_config();
+  private:
+    void make_ports();
+    void make_config();
 
+    class priv;
+    const std::unique_ptr<priv> d;
+ }; // end class compute_association_matrix_process
 
-  class priv;
-  const std::unique_ptr<priv> d;
-
-}; // end class read_descriptor_process
 
 } // end namespace
-
-#endif /* _KWIVER_READ_DESCRIPTOR_PROCESS_H */
+#endif /* _KWIVER_COMPUTE_ASSOCIATION_MATRIX_PROCESS_H_ */

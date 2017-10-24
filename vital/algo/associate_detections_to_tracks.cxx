@@ -1,5 +1,5 @@
 /*ckwg +29
- * Copyright 2015-2017 by Kitware, Inc.
+ * Copyright 2017 by Kitware, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -16,7 +16,7 @@
  *    to endorse or promote products derived from this software without specific
  *    prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS IS''
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR
@@ -28,49 +28,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * \file
- * \brief Image display process interface.
- */
+#include <vital/algo/algorithm.txx>
+#include <vital/algo/associate_detections_to_tracks.h>
 
-#ifndef _KWIVER_READ_DESCRIPTOR_PROCESS_H
-#define _KWIVER_READ_DESCRIPTOR_PROCESS_H
+namespace kwiver {
+namespace vital {
+namespace algo {
 
-#include <sprokit/pipeline/process.h>
-#include "kwiver_processes_export.h"
-
-#include <memory>
-
-namespace kwiver
+associate_detections_to_tracks
+::associate_detections_to_tracks()
 {
+  attach_logger( "associate_detections_to_tracks" );
+}
 
-// -------------------------------------------------------------------------------
-/**
- * @brief Display images
- *
- */
-class KWIVER_PROCESSES_NO_EXPORT read_descriptor_process
-  : public sprokit::process
-{
-public:
-  // -- CONSTRUCTORS --
-  read_descriptor_process( kwiver::vital::config_block_sptr const& config );
-  virtual ~read_descriptor_process();
+} } }
 
-protected:
-  virtual void _configure();
-  virtual void _step();
-
-private:
-  void make_ports();
-  void make_config();
-
-
-  class priv;
-  const std::unique_ptr<priv> d;
-
-}; // end class read_descriptor_process
-
-} // end namespace
-
-#endif /* _KWIVER_READ_DESCRIPTOR_PROCESS_H */
+INSTANTIATE_ALGORITHM_DEF(kwiver::vital::algo::associate_detections_to_tracks);

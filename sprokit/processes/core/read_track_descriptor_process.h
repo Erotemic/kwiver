@@ -30,42 +30,52 @@
 
 /**
  * \file
- * \brief Interface for track_descriptor_set_output_csv
+ * \brief Interface for read_track_descriptor process
  */
 
-#ifndef KWIVER_ARROWS_TRACK_DESCRIPTOR_SET_OUTPUT_CSV_H
-#define KWIVER_ARROWS_TRACK_DESCRIPTOR_SET_OUTPUT_CSV_H
+#ifndef _KWIVER_READ_TRACK_DESCRIPTOR_PROCESS_H
+#define _KWIVER_READ_TRACK_DESCRIPTOR_PROCESS_H
 
-#include <vital/vital_config.h>
-#include <arrows/core/kwiver_algo_core_export.h>
+#include <sprokit/pipeline/process.h>
 
-#include <vital/algo/track_descriptor_set_output.h>
+#include "kwiver_processes_export.h"
 
 #include <memory>
 
-namespace kwiver {
-namespace arrows {
-namespace core {
+namespace kwiver
+{
 
-class KWIVER_ALGO_CORE_EXPORT track_descriptor_set_output_csv
-  : public vital::algorithm_impl<track_descriptor_set_output_csv,
-      vital::algo::track_descriptor_set_output>
+// -------------------------------------------------------------------------------
+/**
+ * \class read_track_descriptor_process
+ *
+ * \brief Reads a series or single set of track descriptors
+ *
+ * \iports
+ * \iport{image_name}
+ * \oport{track descriptor_set}
+ */
+class KWIVER_PROCESSES_NO_EXPORT read_track_descriptor_process
+  : public sprokit::process
 {
 public:
-  track_descriptor_set_output_csv();
-  virtual ~track_descriptor_set_output_csv();
+  read_track_descriptor_process( kwiver::vital::config_block_sptr const& config );
+  virtual ~read_track_descriptor_process();
 
-  virtual void set_configuration( vital::config_block_sptr config );
-  virtual bool check_configuration( vital::config_block_sptr config ) const;
-
-  virtual void write_set( const kwiver::vital::track_descriptor_set_sptr set,
-    std::string const& image_name );
+protected:
+  virtual void _configure();
+  virtual void _init();
+  virtual void _step();
 
 private:
+  void make_ports();
+  void make_config();
+
   class priv;
-  std::unique_ptr< priv > d;
-};
+  const std::unique_ptr<priv> d;
+}; // end class read_track_descriptor_process
 
-} } } // end namespace
 
-#endif // KWIVER_ARROWS_TRACK_DESCRIPTOR_SET_OUTPUT_CSV_H
+} // end namespace
+
+#endif // _KWIVER_READ_TRACK_DESCRIPTOR_PROCESS_H

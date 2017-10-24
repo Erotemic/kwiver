@@ -30,10 +30,10 @@
 
 /**
  * \file
- * \brief Implementation of load/save wrapping functionality.
+ * \brief Implementation of load wrapping functionality.
  */
 
-#include "track_descriptor_set_input.h"
+#include "read_object_track_set.h"
 
 #include <vital/algo/algorithm.txx>
 #include <vital/exceptions/io.h>
@@ -42,7 +42,7 @@
 #include <kwiversys/SystemTools.hxx>
 
 /// \cond DoxygenSuppress
-INSTANTIATE_ALGORITHM_DEF(kwiver::vital::algo::track_descriptor_set_input);
+INSTANTIATE_ALGORITHM_DEF( kwiver::vital::algo::read_object_track_set );
 /// \endcond
 
 
@@ -50,19 +50,19 @@ namespace kwiver {
 namespace vital {
 namespace algo {
 
-track_descriptor_set_input
-::track_descriptor_set_input()
+read_object_track_set
+::read_object_track_set()
   : m_stream( 0 )
   , m_stream_owned( false )
 {
-  attach_logger( "track_descriptor_set_input" );
+  attach_logger( "read_object_track_set" );
 }
 
 
-track_descriptor_set_input
-::~track_descriptor_set_input()
+read_object_track_set
+::~read_object_track_set()
 {
-  if ( m_stream && m_stream_owned )
+  if( m_stream && m_stream_owned )
   {
     delete m_stream;
   }
@@ -71,25 +71,33 @@ track_descriptor_set_input
 }
 
 
-// ------------------------------------------------------------------
+// ------------------------------------------------------------------------------------
 void
-track_descriptor_set_input
+read_object_track_set
 ::open( std::string const& filename )
 {
-    // Make sure that the given file path exists and is a file.
-  if ( ! kwiversys::SystemTools::FileExists( filename ) )
+  if( m_stream && m_stream_owned )
   {
-    throw path_not_exists(filename);
+    delete m_stream;
   }
 
-  if ( kwiversys::SystemTools::FileIsDirectory( filename ) )
+  m_stream = 0;
+
+  // Make sure that the given file path exists and is a file.
+  if( ! kwiversys::SystemTools::FileExists( filename ) )
   {
-    throw path_not_a_file(filename);
+    throw path_not_exists( filename );
+  }
+
+  if( kwiversys::SystemTools::FileIsDirectory( filename ) )
+  {
+    throw path_not_a_file( filename );
   }
 
   // try to open the file
   std::istream* file( new std::ifstream( filename ) );
-  if ( ! file )
+
+  if( ! file )
   {
     kwiver::vital::file_not_found_exception( filename, "open failed"  );
   }
@@ -101,9 +109,9 @@ track_descriptor_set_input
 }
 
 
-// ------------------------------------------------------------------
+// ------------------------------------------------------------------------------------
 void
-track_descriptor_set_input
+read_object_track_set
 ::use_stream( std::istream* strm )
 {
   m_stream = strm;
@@ -113,9 +121,9 @@ track_descriptor_set_input
 }
 
 
-// ------------------------------------------------------------------
+// ------------------------------------------------------------------------------------
 void
-track_descriptor_set_input
+read_object_track_set
 ::close()
 {
   if ( m_stream_owned )
@@ -127,9 +135,9 @@ track_descriptor_set_input
 }
 
 
-// ------------------------------------------------------------------
+// ------------------------------------------------------------------------------------
 bool
-track_descriptor_set_input
+read_object_track_set
 ::at_eof() const
 {
   if ( m_stream )
@@ -138,24 +146,25 @@ track_descriptor_set_input
   }
   else
   {
-    return true; // really error
+    return true;
   }
 }
 
 
-// ------------------------------------------------------------------
+// ------------------------------------------------------------------------------------
 std::istream&
-track_descriptor_set_input
+read_object_track_set
 ::stream()
 {
   return *m_stream;
 }
 
 
-// ------------------------------------------------------------------
+// ------------------------------------------------------------------------------------
 void
-track_descriptor_set_input
+read_object_track_set
 ::new_stream()
-{ }
+{
+}
 
 } } } // end namespace
