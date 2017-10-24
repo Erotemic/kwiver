@@ -28,55 +28,56 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * \file
- * \brief Interface for track_descriptor_set_input process
- */
+#ifndef _KWIVER_COMPUTE_TRACK_DESCRIPTORS_PROCESS_H_
+#define _KWIVER_COMPUTE_TRACK_DESCRIPTORS_PROCESS_H_
 
-#ifndef _KWIVER_TRACK_DESCRIPTOR_INPUT_PROCESS_H
-#define _KWIVER_TRACK_DESCRIPTOR_INPUT_PROCESS_H
+#include "kwiver_processes_export.h"
 
 #include <sprokit/pipeline/process.h>
 
-#include "kwiver_processes_export.h"
+#include <vital/types/track_descriptor_set.h>
 
 #include <memory>
 
 namespace kwiver
 {
 
-  // ----------------------------------------------------------------
+// -----------------------------------------------------------------------------
 /**
- * \class track_descriptor_input_process
+ * \class compute_track_descriptors_process
  *
- * \brief Reads a series of images
+ * \brief Computes track descriptors along object tracks or object detections.
  *
  * \iports
- * \iport{image_name}
- * \iport{track descriptor_set}
+ * \iport{timestamp}
+ * \iport{image}
+ * \iport{tracks}
+ * \iport{detections}
  *
+ * \oports
+ * \oport{track_descriptor_set}
  */
-class KWIVER_PROCESSES_NO_EXPORT track_descriptor_input_process
+class KWIVER_PROCESSES_NO_EXPORT compute_track_descriptors_process
   : public sprokit::process
 {
-public:
-  track_descriptor_input_process( kwiver::vital::config_block_sptr const& config );
-  virtual ~track_descriptor_input_process();
+  public:
+  compute_track_descriptors_process( vital::config_block_sptr const& config );
+  virtual ~compute_track_descriptors_process();
 
-protected:
-  virtual void _configure();
-  virtual void _init();
-  virtual void _step();
+  protected:
+    virtual void _configure();
+    virtual void _step();
 
-private:
-  void make_ports();
-  void make_config();
+  private:
+    void make_ports();
+    void make_config();
 
-  class priv;
-  const std::unique_ptr<priv> d;
-}; // end class track_descriptor_input_process
+    void push_outputs( vital::track_descriptor_set_sptr& to_output );
+
+    class priv;
+    const std::unique_ptr<priv> d;
+ }; // end class compute_track_descriptors_process
 
 
 } // end namespace
-
-#endif // _KWIVER_TRACK_DESCRIPTOR_INPUT_PROCESS_H
+#endif /* _KWIVER_COMPUTE_TRACK_DESCRIPTORS_PROCESS_H_ */
