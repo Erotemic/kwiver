@@ -190,17 +190,13 @@ void
 kw_archive_writer_process
 ::_init()
 {
-<<<<<<< HEAD
   scoped_init_instrumentation();
 
-||||||| merged common ancestors
-=======
   if( d->m_base_filename.empty() )
   {
     return;
   }
 
->>>>>>> jon/viame/query-wip
   std::string path = d->m_output_directory + "/" + d->m_base_filename;
 
   // Make sure directory exists
