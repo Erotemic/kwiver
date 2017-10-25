@@ -1,5 +1,5 @@
 /*ckwg +29
- * Copyright 2017 by Kitware, Inc.
+ * Copyright 2016-2017 by Kitware, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,68 +28,49 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * \file
- * \brief compute_track_descriptors algorithm definition
- */
-
-#ifndef VITAL_ALGO_COMPUTE_TRACK_DESCRIPTORS_H_
-#define VITAL_ALGO_COMPUTE_TRACK_DESCRIPTORS_H_
+#ifndef VITAL_ALGO_FORMULATE_QUERY_H_
+#define VITAL_ALGO_FORMULATE_QUERY_H_
 
 #include <vital/vital_config.h>
 
-#include <vital/algo/algorithm.h>
+#include <string>
+#include <memory>
 
-#include <vital/types/timestamp.h>
-#include <vital/types/object_track_set.h>
+#include <vital/algo/algorithm.h>
 #include <vital/types/image_container.h>
 #include <vital/types/track_descriptor_set.h>
+#include <vital/types/descriptor_request.h>
 
 namespace kwiver {
 namespace vital {
 namespace algo {
 
-/// An abstract base class for computing track descriptors
-class VITAL_ALGO_EXPORT compute_track_descriptors
-  : public kwiver::vital::algorithm_def<compute_track_descriptors>
+/// An abstract base class for formulating descriptors for queries
+class VITAL_ALGO_EXPORT handle_descriptor_request
+  : public kwiver::vital::algorithm_def<handle_descriptor_request>
 {
 public:
   /// Return the name of this algorithm
-  static std::string static_type_name() { return "compute_track_descriptors"; }
+  static std::string static_type_name() { return "handle_descriptor_request"; }
 
-  /// Compute track descriptors given an image and tracks
-  /**
-   * \param ts timestamp for the current frame
-   * \param image_data contains the image data to process
-   * \param tracks the tracks to extract descriptors around
-   *
-   * \returns a set of track descriptors
-   */
-  virtual kwiver::vital::track_descriptor_set_sptr
-  compute( kwiver::vital::timestamp ts,
-           kwiver::vital::image_container_sptr image_data,
-           kwiver::vital::object_track_set_sptr tracks ) = 0;
+  /// Set this algorithm's properties via a config block
+  virtual void set_configuration( kwiver::vital::config_block_sptr config );
+  /// Check that the algorithm's currently configuration is valid
+  virtual bool check_configuration( kwiver::vital::config_block_sptr config ) const;
 
-  /// Flush any remaining in-progress descriptors
-  /**
-   * This is typically called at the end of a video, in case
-   * any temporal descriptors and currently in progress and
-   * still need to be output.
-   *
-   * \returns a set of track descriptors
-   */
-  virtual kwiver::vital::track_descriptor_set_sptr flush() = 0;
+  /// Formulate query
+  virtual bool handle(
+    kwiver::vital::descriptor_request_sptr request,
+    kwiver::vital::track_descriptor_set_sptr& desc,
+    std::vector< kwiver::vital::image_container_sptr >& imgs ) = 0;
 
 protected:
-  compute_track_descriptors();
+  handle_descriptor_request();
 
 };
 
-
-/// Shared pointer for base compute_track_descriptors algorithm definition class
-typedef std::shared_ptr<compute_track_descriptors> compute_track_descriptors_sptr;
-
+typedef std::shared_ptr<handle_descriptor_request> handle_descriptor_request_sptr;
 
 } } } // end namespace
 
-#endif // VITAL_ALGO_COMPUTE_TRACK_DESCRIPTORS_H_
+#endif // VITAL_ALGO_CONVERT_IMAGE_H_

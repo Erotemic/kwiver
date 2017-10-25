@@ -1,5 +1,5 @@
 /*ckwg +29
- * Copyright 2014-2017 by Kitware, Inc.
+ * Copyright 2017 by Kitware, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,83 +28,53 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _KWIVER_KW_ARCHIVE_WRITER_PROCESS_H_
-#define _KWIVER_KW_ARCHIVE_WRITER_PROCESS_H_
+#ifndef _KWIVER_HANDLE_DESCRIPTOR_REQUEST_PROCESS_H_
+#define _KWIVER_HANDLE_DESCRIPTOR_REQUEST_PROCESS_H_
+
+#include "kwiver_processes_export.h"
 
 #include <sprokit/pipeline/process.h>
-
-#include "kwiver_processes_vxl_export.h"
 
 #include <memory>
 
 namespace kwiver
 {
 
-/*!
- * \class kw_archive_writer_process
+// -----------------------------------------------------------------------------
+/**
+ * \class handle_descriptor_request_process
  *
- * \brief KW archive writer process
- *
- * \process Writes kw video archive
- *
- * This process writes a multi-file KW archive of the image stream
- * received.  The archive directory
+ * \brief Generates association matrix between old tracks and new detections
+ *        for use in object tracking.
  *
  * \iports
- * \iport{timestamp}
- * Time associated with current frame
+ * \iport{descriptor_request}
  *
- * \iport{image}
- * Image frame from video being processed
- *
- * \iport{src_to_ref_homography}
- * Homography that will transform current image to reference coordinates
- *
- * \iport{corner_points}
- * Corner points for image in lat/lon coordinates
- *
- * \iport{gsd}
- * Scaling of the image in meters per pixel.
- * 
- * \iport{stream_id}
- * Optional input stream ID to put in the KWA file.
- *
- * \iport{filename}
- * Optional input filename (no extension) to write the KWA to.
+ * \oports
+ * \oport{track_descriptor_set}
+ * \oport{image_container}
+ * \oport{filename}
+ * \oport{stream_id}
  */
-
-class KWIVER_PROCESSES_VXL_NO_EXPORT kw_archive_writer_process
+class KWIVER_PROCESSES_NO_EXPORT handle_descriptor_request_process
   : public sprokit::process
 {
-public:
+  public:
+  handle_descriptor_request_process( vital::config_block_sptr const& config );
+  virtual ~handle_descriptor_request_process();
 
-  /**
-   * \brief Constructor
-   *
-   * @param config Process config object
-   *
-   * @return
-   */
-  kw_archive_writer_process( kwiver::vital::config_block_sptr const& config );
+  protected:
+    virtual void _configure();
+    virtual void _step();
 
-  /**
-   * \brief Destructor
-   */
-  ~kw_archive_writer_process();
+  private:
+    void make_ports();
+    void make_config();
 
-protected:
-  virtual void _configure();
-  virtual void _init();
-  virtual void _step();
+    class priv;
+    const std::unique_ptr<priv> d;
+ }; // end class handle_descriptor_request_process
 
-private:
-  void make_ports();
-  void make_config();
 
-  class priv;
-  const std::unique_ptr<priv> d;
-};
-
-} // end namespace kwiver
-
-#endif /* _KWIVER_KW_ARCHIVE_WRITER_PROCESS_H_ */
+} // end namespace
+#endif /* _KWIVER_HANDLE_DESCRIPTOR_REQUEST_PROCESS_H_ */

@@ -19,12 +19,14 @@ set( sources
   draw_tracks_process.cxx
   extract_descriptors_process.cxx
   frame_list_process.cxx
+  handle_descriptor_request_process.cxx
   image_file_reader_process.cxx
   image_filter_process.cxx
   image_object_detector_process.cxx
   image_writer_process.cxx
   initialize_object_tracks_process.cxx
   matcher_process.cxx
+  perform_query_process.cxx
   read_descriptor_process.cxx
   read_object_track_process.cxx
   read_track_descriptor_process.cxx
@@ -50,12 +52,14 @@ set( private_headers
   draw_tracks_process.h
   extract_descriptors_process.h
   frame_list_process.h
+  handle_descriptor_request_process.h
   image_file_reader_process.h
   image_filter_process.h
   image_object_detector_process.h
   image_writer_process.h
   initialize_object_tracks_process.h
   matcher_process.h
+  perform_query_process.h
   read_descriptor_process.h
   read_object_track_process.h
   read_track_descriptor_process.h
