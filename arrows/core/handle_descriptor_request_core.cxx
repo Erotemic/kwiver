@@ -30,10 +30,10 @@
 
 /**
  * \file
- * \brief Implementation of formulate_query_core
+ * \brief Implementation of handle_descriptor_request_core
  */
 
-#include "formulate_query_core.h"
+#include "handle_descriptor_request_core.h"
 
 #include <algorithm>
 #include <iostream>
@@ -42,6 +42,7 @@
 #include <string>
 #include <vector>
 #include <iterator>
+#include <exception>
 
 #include <vital/algo/algorithm.h>
 #include <vital/exceptions/algorithm.h>
@@ -54,15 +55,15 @@ namespace arrows {
 namespace core {
 
 /// Default Constructor
-formulate_query_core
-::formulate_query_core()
+handle_descriptor_request_core
+::handle_descriptor_request_core()
 {
 }
 
 
 /// Get this alg's \link vital::config_block configuration block \endlink
 vital::config_block_sptr
-formulate_query_core
+handle_descriptor_request_core
 ::get_configuration() const
 {
   // get base config from base class
@@ -83,7 +84,7 @@ formulate_query_core
 
 /// Set this algo's properties via a config block
 void
-formulate_query_core
+handle_descriptor_request_core
 ::set_configuration(vital::config_block_sptr in_config)
 {
   // Starting with our generated config_block to ensure that assumed values are present
@@ -104,7 +105,7 @@ formulate_query_core
 
 
 bool
-formulate_query_core
+handle_descriptor_request_core
 ::check_configuration(vital::config_block_sptr config) const
 {
   return (
@@ -116,17 +117,14 @@ formulate_query_core
 
 
 /// Extend a previous set of tracks using the current frame
-kwiver::vital::track_descriptor_set_sptr
-formulate_query_core
-::formulate( kwiver::vital::descriptor_request_sptr request )
+bool
+handle_descriptor_request_core
+::handle(
+  kwiver::vital::descriptor_request_sptr request,
+  kwiver::vital::track_descriptor_set_sptr& descs,
+  std::vector< kwiver::vital::image_container_sptr >& imgs )
 {
-  kwiver::vital::track_descriptor_set_sptr descs;
-
-  // Input dummy variable for now
-  kwiver::vital::track_descriptor_sptr example;
-  descs->push_back( example );
-
-  /*// verify that all dependent algorithms have been initialized
+  // Verify that all dependent algorithms have been initialized
   if( !reader_ || !extractor_ )
   {
     // Something did not initialize
@@ -135,12 +133,39 @@ formulate_query_core
   }
 
   // load images or video if required by query plan
-  kwiver::vital::image_container_sptr curr_feat = reader_->load( "" );
+  std::string data_path = request->data_location();
+  kwiver::vital::image_container_sptr image = reader_->load( data_path );
+
+  if( !image )
+  {
+    throw std::runtime_error( "Handler unable to load image" );
+  }
 
   // extract descriptors on the current frame
-  kwiver::vital::track_descriptor_set_sptr descs = extractor_->compute(  );*/
+  vital::timestamp fake_ts( 0, 0 );
+  vital::track_sptr ff_track = vital::track::create();
+  ff_track->set_id( 0 );
 
-  return descs;
+  vital::bounding_box_d dims( 0, 0, image->width(), image->height() );
+
+  vital::detected_object_sptr det(
+    new vital::detected_object( dims ) );
+  vital::track_state_sptr state1(
+    new vital::object_track_state( fake_ts.get_frame(), det ) );
+
+  ff_track->append( state1 );
+
+  std::vector< vital::track_sptr > trk_vec;
+  trk_vec.push_back( ff_track );
+
+  vital::object_track_set_sptr tracks(
+    new vital::object_track_set( trk_vec ) );
+
+  descs = extractor_->compute( fake_ts, image, tracks );
+
+  imgs.clear();
+  imgs.push_back( image );
+  return true;
 }
 
 } // end namespace core

@@ -143,7 +143,7 @@ refine_detections_write_to_disk
 {
   cv::Mat img = ocv::image_container::vital_to_ocv( image_data->get_image() );
 
-  for( auto det : *detections->select() )
+  for( auto det : *detections )
   {
     // Generate output filename
     std::string ofn;
@@ -170,7 +170,11 @@ refine_detections_write_to_disk
       bbox.width(), bbox.height() );
 
     cv::Mat crop = img( r );
-    cv::imwrite( ofn, crop );
+    cv::Mat output;
+
+    cv::cvtColor( crop, output, cv::COLOR_BGR2RGB);
+
+    cv::imwrite( ofn, output );
   }
 
   return detections;

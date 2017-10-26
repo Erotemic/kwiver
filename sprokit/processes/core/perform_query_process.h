@@ -28,44 +28,40 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * \file
- * \brief Interface for track_descriptor_set_input process
- */
-
-#ifndef _KWIVER_TRACK_DESCRIPTOR_INPUT_PROCESS_H
-#define _KWIVER_TRACK_DESCRIPTOR_INPUT_PROCESS_H
-
-#include <sprokit/pipeline/process.h>
+#ifndef _KWIVER_PERFORM_QUERY_PROCESS_H_
+#define _KWIVER_PERFORM_QUERY_PROCESS_H_
 
 #include "kwiver_processes_export.h"
+
+#include <sprokit/pipeline/process.h>
 
 #include <memory>
 
 namespace kwiver
 {
 
-  // ----------------------------------------------------------------
+// -----------------------------------------------------------------------------
 /**
- * \class track_descriptor_input_process
+ * \class perform_query_process
  *
- * \brief Reads a series of images
+ * \brief Runs a database query and produces an output result
  *
  * \iports
- * \iport{image_name}
- * \iport{track descriptor_set}
+ * \iport{database_query}
+ * \iport{iqr_feedback}
  *
+ * \oports
+ * \oport{query_result}
  */
-class KWIVER_PROCESSES_NO_EXPORT track_descriptor_input_process
+class KWIVER_PROCESSES_NO_EXPORT perform_query_process
   : public sprokit::process
 {
 public:
-  track_descriptor_input_process( kwiver::vital::config_block_sptr const& config );
-  virtual ~track_descriptor_input_process();
+  perform_query_process( vital::config_block_sptr const& config );
+  virtual ~perform_query_process();
 
 protected:
   virtual void _configure();
-  virtual void _init();
   virtual void _step();
 
 private:
@@ -74,9 +70,8 @@ private:
 
   class priv;
   const std::unique_ptr<priv> d;
-}; // end class track_descriptor_input_process
-
+}; // end class perform_query_process
 
 } // end namespace
 
-#endif // _KWIVER_TRACK_DESCRIPTOR_INPUT_PROCESS_H
+#endif /* _KWIVER_PERFORM_QUERY_PROCESS_H_ */
