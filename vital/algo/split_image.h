@@ -42,7 +42,7 @@ namespace kwiver {
 namespace vital {
 namespace algo {
 
-/// An abstract base class for converting base image type
+/// An abstract base class for spliting a single image into multiple sub-images
 class VITAL_ALGO_EXPORT split_image
   : public kwiver::vital::algorithm_def<split_image>
 {
