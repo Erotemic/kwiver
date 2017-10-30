@@ -246,16 +246,6 @@ register_factories( kwiver::vital::plugin_loader& vpm )
   // Conditional algorithms
   // Source ``KWIVER_OCV_HAS_*`` symbol definitions can be found in the header
   //  files of the algorithms referred to.
-#ifdef KWIVER_OCV_HAS_HOG
-  fact = vpm.ADD_ALGORITHM( "ocv_HOG", kwiver::arrows::ocv::extract_descriptors_HOG );
-  fact->add_attribute( kwiver::vital::plugin_factory::PLUGIN_DESCRIPTION,
-                       "OpenCV descriptor extraction via the HOG algorithm" )
-    .add_attribute( kwiver::vital::plugin_factory::PLUGIN_MODULE_NAME, module_name )
-    .add_attribute( kwiver::vital::plugin_factory::PLUGIN_VERSION, "1.0" )
-    .add_attribute( kwiver::vital::plugin_factory::PLUGIN_ORGANIZATION, "Kitware Inc." )
-    ;
-#endif
-
 #ifdef KWIVER_OCV_HAS_AGAST
   fact = vpm.ADD_ALGORITHM( "ocv_AGAST", kwiver::arrows::ocv::detect_features_AGAST );
   fact->add_attribute( kwiver::vital::plugin_factory::PLUGIN_DESCRIPTION,
