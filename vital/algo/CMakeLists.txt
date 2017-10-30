@@ -30,6 +30,7 @@ set( public_headers
   estimate_homography.h
   estimate_similarity_transform.h
   extract_descriptors.h
+  extract_image_descriptor.h
   feature_descriptor_io.h
   filter_features.h
   formulate_query.h
