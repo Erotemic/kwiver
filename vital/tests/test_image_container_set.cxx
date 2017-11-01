@@ -30,7 +30,6 @@
 
 
 #include <vital/types/image_container_set.h>
-#include <vital/types/image_container.h>
 
 #include <gtest/gtest.h>
 
@@ -40,7 +39,6 @@ int
 main(int argc, char* argv[])
 {
   ::testing::InitGoogleTest( &argc, argv );
-  TEST_LOAD_PLUGINS();
   return RUN_ALL_TESTS();
 }
 
@@ -48,8 +46,8 @@ main(int argc, char* argv[])
 // ----------------------------------------------------------------------------
 TEST(image_container_set, empty)
 {
-  kwiver::vital::image_container_set_sptr empty_set;
-  empty_set = std::make_shared<kwiver::vital::simple_image_container_set>();
+  const auto empty_set
+          = std::make_shared<kwiver::vital::simple_image_container_set>();
 
   // Check size is reported as zero
   EXPECT_EQ(0, empty_set->size()) << "Set empty";

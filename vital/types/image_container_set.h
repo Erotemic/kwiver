@@ -89,10 +89,10 @@ public:
     : data_( images ) { }
 
   /// Return the number of items
-  virtual size_t size() const { return data_.size(); }
+  size_t size() const override { return data_.size(); }
 
   /// Return the underlying vector container
-  virtual std::vector< image_container_sptr > images() const { return data_; }
+  std::vector< image_container_sptr > images() const override { return data_; }
 
 
 protected:
