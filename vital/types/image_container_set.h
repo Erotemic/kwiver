@@ -55,6 +55,9 @@ namespace vital {
 class image_container_set : private noncopyable
 {
 public:
+  using iterator = std::vector< image_container_sptr >::iterator;
+  using const_iterator = std::vector< image_container_sptr >::const_iterator;
+
   /// Destructor
   virtual ~image_container_set() = default;
 
@@ -63,6 +66,11 @@ public:
 
   /// Return a vector of image shared pointers
   virtual std::vector< image_container_sptr > images() const = 0;
+
+  virtual iterator begin() = 0;
+  virtual iterator end() = 0;
+  virtual const_iterator cbegin() const = 0;
+  virtual const_iterator cend() const = 0;
 
 protected:
   image_container_set()
@@ -85,7 +93,8 @@ public:
   simple_image_container_set() { }
 
   /// Constructor from a vector of images
-  explicit simple_image_container_set( std::vector< image_container_sptr > const& images )
+  explicit simple_image_container_set(
+          std::vector< image_container_sptr > const& images )
     : data_( images ) { }
 
   /// Return the number of items
@@ -94,6 +103,10 @@ public:
   /// Return the underlying vector container
   std::vector< image_container_sptr > images() const override { return data_; }
 
+  iterator begin() override { return data_.begin(); }
+  iterator end() override { return data_.end(); }
+  const_iterator cbegin() const override { return data_.cbegin(); }
+  const_iterator cend() const override { return data_.cend(); }
 
 protected:
   /// The vector of images

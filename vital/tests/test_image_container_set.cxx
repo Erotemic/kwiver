@@ -30,9 +30,12 @@
 
 
 #include <vital/types/image_container_set.h>
+#include <arrows/ocv/image_container.h>
 
 #include <gtest/gtest.h>
 
+namespace kv = kwiver::vital;
+namespace kao = kwiver::arrows::ocv;
 
 // ----------------------------------------------------------------------------
 int
@@ -54,4 +57,42 @@ TEST(image_container_set, empty)
 
   // Check underlying vector implementation exists and also reports zero size
   EXPECT_EQ(0, empty_set->images().size()) << "Vector empty";
+}
+
+TEST(image_container_set, iterators)
+{
+  const std::vector<int> sizes{{100, 200, 300}};
+  std::vector< kv::image_container_sptr > vic;
+  for (auto sz : sizes)
+  {
+    auto imgc = std::make_shared<kao::image_container>( kv::image(sz,sz,3) );
+    vic.push_back(imgc);
+  }
+  const auto sics = std::make_shared<kv::simple_image_container_set>(vic);
+
+  EXPECT_EQ(sizes.size(), sics->size()) << "Set contains three images";
+
+  const size_t new_size{500};
+  auto imgc = std::make_shared<kao::image_container>(
+          kv::image(new_size,new_size,3) );
+
+  const auto itce = sics->cend();
+  int ct = 0;
+  for (auto it = sics->cbegin(); it != itce; ++it)
+  {
+    EXPECT_EQ(sizes.at(ct++), (*it)->height()) << "Image height read correctly";
+  }
+  EXPECT_EQ(sizes.size(), ct)
+                << "Const iterator iterates through three elements";
+
+  const auto ite = sics->end();
+  for (auto it = sics->begin(); it != ite; ++it)
+  {
+    *it = imgc;
+  }
+  EXPECT_EQ(sizes.size(), sics->end() - sics->begin())
+                << "Non-const iterator iterates through three elements";
+
+  EXPECT_EQ((*sics->cbegin())->height(), new_size)
+                << "New size written to image";
 }
