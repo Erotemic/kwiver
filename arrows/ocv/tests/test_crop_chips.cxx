@@ -49,9 +49,6 @@ int
 main(int argc, char* argv[])
 {
   ::testing::InitGoogleTest( &argc, argv );
-
-  kwiver::vital::plugin_manager::instance().load_all_plugins();
-
   return RUN_ALL_TESTS();
 }
 
@@ -60,6 +57,8 @@ using namespace kwiver::vital;
 TEST(crop_chips, factory)
 {
   using namespace kwiver::arrows;
+
+  kwiver::vital::plugin_manager::instance().load_all_plugins();
 
   algo::crop_chips_sptr algo = kwiver::vital::algo::crop_chips::create("ocv");
   ASSERT_TRUE(!algo) << "Unable to create crop_chips algorithm of type ocv";
