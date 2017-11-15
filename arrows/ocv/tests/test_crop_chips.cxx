@@ -61,7 +61,7 @@ TEST(crop_chips, factory)
   kwiver::vital::plugin_manager::instance().load_all_plugins();
 
   algo::crop_chips_sptr algo = kwiver::vital::algo::crop_chips::create("ocv");
-  ASSERT_TRUE(!algo) << "Unable to create crop_chips algorithm of type ocv";
+  EXPECT_NE(nullptr, algo) << "Unable to create crop_chips algorithm of type ocv";
   algo::crop_chips* algo_ptr = algo.get();
   ASSERT_TRUE(typeid(*algo_ptr) == typeid(ocv::crop_chips)) << "Factory method did not construct the correct type";
 }
