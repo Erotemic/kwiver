@@ -62,7 +62,7 @@ PYBIND11_MODULE(detected_object, m)
 
     Developer:
         python -c "import vital.types; help(vital.types.DetectedObject)"
-        python -m xdoctest vital.types DetectedObject --xdoc-dynamic
+        python -m xdoctest vital.types DetectedObject
 
    *
    */
