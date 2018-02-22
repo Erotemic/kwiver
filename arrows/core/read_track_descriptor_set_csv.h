@@ -54,6 +54,11 @@ public:
 
   virtual void open( std::string const& filename );
 
+  static constexpr char const* name = "csv";
+
+  static constexpr char const* description =
+    "Track descriptor csv writer\n";
+
   virtual void set_configuration( vital::config_block_sptr config );
   virtual bool check_configuration( vital::config_block_sptr config ) const;
 

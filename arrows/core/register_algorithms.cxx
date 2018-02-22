@@ -1,5 +1,5 @@
 /*ckwg +29
- * Copyright 2014-2017 by Kitware, Inc.
+ * Copyright 2014-2018 by Kitware, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,6 +45,11 @@
 #include <arrows/core/compute_association_matrix_from_features.h>
 #include <arrows/core/compute_ref_homography_core.h>
 #include <arrows/core/convert_image_bypass.h>
+#include <arrows/core/detected_object_set_input_csv.h>
+#include <arrows/core/detected_object_set_input_kw18.h>
+#include <arrows/core/detected_object_set_output_csv.h>
+#include <arrows/core/detected_object_set_output_kw18.h>
+#include <arrows/core/dynamic_config_none.h>
 #include <arrows/core/estimate_canonical_transform.h>
 #include <arrows/core/example_detector.h>
 #include <arrows/core/feature_descriptor_io.h>
@@ -52,6 +57,7 @@
 #include <arrows/core/handle_descriptor_request_core.h>
 #include <arrows/core/filter_features_scale.h>
 #include <arrows/core/filter_tracks.h>
+#include <arrows/core/formulate_query_core.h>
 #include <arrows/core/hierarchical_bundle_adjust.h>
 #include <arrows/core/initialize_cameras_landmarks.h>
 #include <arrows/core/initialize_object_tracks_threshold.h>
@@ -67,25 +73,41 @@
 #include <arrows/core/video_input_split.h>
 #include <arrows/core/write_object_track_set_kw18.h>
 #include <arrows/core/write_track_descriptor_set_csv.h>
-
-#include <arrows/core/detected_object_set_input_kw18.h>
-#include <arrows/core/detected_object_set_output_kw18.h>
-#include <arrows/core/detected_object_set_input_csv.h>
-#include <arrows/core/detected_object_set_output_csv.h>
-
-#include <arrows/core/dynamic_config_none.h>
+#include <arrows/core/track_descriptor_set_output_csv.h>
 
 
 namespace kwiver {
 namespace arrows {
 namespace core {
 
+namespace {
+
+static auto const module_name         = std::string{ "arrows.core" };
+static auto const module_version      = std::string{ "1.0" };
+static auto const module_organization = std::string{ "Kitware Inc." };
+
+// ----------------------------------------------------------------------------
+template <typename algorithm_t>
+void register_algorithm( kwiver::vital::plugin_loader& vpm )
+{
+  using kvpf = kwiver::vital::plugin_factory;
+
+  auto fact = vpm.ADD_ALGORITHM( algorithm_t::name, algorithm_t );
+  fact->add_attribute( kvpf::PLUGIN_DESCRIPTION,  algorithm_t::description )
+       .add_attribute( kvpf::PLUGIN_MODULE_NAME,  module_name )
+       .add_attribute( kvpf::PLUGIN_VERSION,      module_version )
+       .add_attribute( kvpf::PLUGIN_ORGANIZATION, module_organization )
+       ;
+}
+
+}
+
+// ----------------------------------------------------------------------------
 extern "C"
 KWIVER_ALGO_CORE_PLUGIN_EXPORT
 void
 register_factories( kwiver::vital::plugin_loader& vpm )
 {
-  static auto const module_name = std::string( "arrows.core" );
   if (vpm.is_module_loaded( module_name ) )
   {
     return;
@@ -464,6 +486,45 @@ register_factories( kwiver::vital::plugin_loader& vpm )
           .add_attribute( kwiver::vital::plugin_factory::PLUGIN_ORGANIZATION, "Kitware Inc." )
           ;
 
+  fact = vpm.ADD_ALGORITHM( "csv", kwiver::arrows::core::track_descriptor_set_output_csv );
+  fact->add_attribute( kwiver::vital::plugin_factory::PLUGIN_DESCRIPTION,
+                       "Track descriptor csv writer\n")
+    .add_attribute( kwiver::vital::plugin_factory::PLUGIN_MODULE_NAME, module_name )
+    .add_attribute( kwiver::vital::plugin_factory::PLUGIN_VERSION, "1.0" )
+    .add_attribute( kwiver::vital::plugin_factory::PLUGIN_ORGANIZATION, "Kitware Inc." )
+    ;
+
+
+  register_algorithm< class_probablity_filter >( vpm );
+  register_algorithm< close_loops_bad_frames_only >( vpm );
+  register_algorithm< close_loops_exhaustive >( vpm );
+  register_algorithm< close_loops_keyframe >( vpm );
+  register_algorithm< close_loops_multi_method >( vpm );
+  register_algorithm< compute_ref_homography_core >( vpm );
+  register_algorithm< convert_image_bypass >( vpm );
+  register_algorithm< detected_object_set_input_csv >( vpm );
+  register_algorithm< detected_object_set_input_kw18 >( vpm );
+  register_algorithm< detected_object_set_output_csv >( vpm );
+  register_algorithm< detected_object_set_output_kw18 >( vpm );
+  register_algorithm< dynamic_config_none >( vpm );
+  register_algorithm< estimate_canonical_transform >( vpm );
+  register_algorithm< example_detector >( vpm );
+  register_algorithm< feature_descriptor_io >( vpm );
+  register_algorithm< filter_features_magnitude >( vpm );
+  register_algorithm< filter_features_scale >( vpm );
+  register_algorithm< filter_tracks >( vpm );
+  register_algorithm< formulate_query_core >( vpm );
+  register_algorithm< hierarchical_bundle_adjust >( vpm );
+  register_algorithm< initialize_cameras_landmarks >( vpm );
+  register_algorithm< match_features_fundamental_matrix >( vpm );
+  register_algorithm< match_features_homography >( vpm );
+  register_algorithm< track_descriptor_set_output_csv >( vpm );
+  register_algorithm< track_features_core >( vpm );
+  register_algorithm< triangulate_landmarks >( vpm );
+  register_algorithm< video_input_filter >( vpm );
+  register_algorithm< video_input_image_list >( vpm );
+  register_algorithm< video_input_pos >( vpm );
+  register_algorithm< video_input_split >( vpm );
 
   vpm.mark_module_as_loaded( module_name );
 }
